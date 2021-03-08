@@ -1,3 +1,4 @@
 {
-    "useGoldMentions": true
+    "useGoldMentions": true,
+    "algorithm": "exactstringmatch"
 }
