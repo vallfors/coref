@@ -1,9 +1,9 @@
-from document import *
-from config import *
-from read_conll import *
+from preprocessing.document import *
+from preprocessing.config import *
+from preprocessing.read_conll import *
 
 # Placeholder coreference algorithm that clusters all mentions that have exactly the same string
-# and no otherrs.
+# and no others.
 def exactStringMatch(doc: Document, config: Config):
     clusters = {}
     for mention in doc.predictedMentions.values():
@@ -32,18 +32,3 @@ def predictCoreference(doc: Document, config: Config):
         exactStringMatch(doc, config)
     else:
         raise Exception("Configured to use algorithm {}, but no such algorithm is implemented".format(config.algorithm))
-
-def main():
-    obj = loadFromFile('./data/suc-core-conll/aa05_fixed.conll')
-    doc = Document(obj)
-    config = Config("preprocessing/config.json")
-    predictCoreference(doc, config)
-    for id, mention in doc.predictedMentions.items():
-        print("{} {}".format(mention.id, mention.text))
-    for id, cluster in doc.predictedClusters.items():
-        print(id)
-        for mentionId in cluster:
-            print(doc.predictedMentions[mentionId].text)
-
-if __name__ == "__main__":
-    main()

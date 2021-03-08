@@ -1,5 +1,5 @@
 from typing import Dict, List
-from read_conll import CoNLLFile, loadFromFile
+from preprocessing.read_conll import CoNLLFile, loadFromFile
 
 class Mention:
     id: int
@@ -61,17 +61,3 @@ class Document:
             self.goldClusters[mention.cluster].append(mention.id)
 
             idCounter += 1
-
-
-def main():
-    obj = loadFromFile('./data/suc-core-conll/aa05_fixed.conll')
-    doc = Document(obj)
-    for id, mention in doc.goldMentions.items():
-        print("{} {}".format(mention.id, mention.text))
-    for id, cluster in doc.goldClusters.items():
-        print(id)
-        for mentionId in cluster:
-            print(doc.goldMentions[mentionId].text)
-
-if __name__ == "__main__":
-    main()

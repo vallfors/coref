@@ -12,7 +12,3 @@ class Config:
             configDict = json.load(f)
         self.useGoldMentions = configDict['useGoldMentions']
         self.algorithm = configDict['algorithm']
-
-if __name__ == "__main__":
-    config = Config("preprocessing/config.json")
-    print(config.useGoldMentions)
