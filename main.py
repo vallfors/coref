@@ -1,11 +1,17 @@
 from preprocessing.document import *
 from preprocessing.config import *
-from preprocessing.basic_algorithm import *
+from algorithm.basic_algorithm import *
+from argparse import ArgumentParser
+
 
 def main():
-    obj = loadFromFile('./data/suc-core-conll/aa05_fixed.conll')
+    parser = ArgumentParser()
+    parser.add_argument('configFile', help='Path to the config file')
+
+    args = parser.parse_args()
+    config = Config(args.configFile)
+    obj = loadFromFile(config.inputFile)
     doc = Document(obj)
-    config = Config("preprocessing/config.json")
     predictCoreference(doc, config)
     for id, mention in doc.predictedMentions.items():
         print("{} {}".format(mention.id, mention.text))

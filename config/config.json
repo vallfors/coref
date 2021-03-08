@@ -1,0 +1,5 @@
+{
+    "useGoldMentions": true,
+    "algorithm": "exactstringmatch",
+    "inputFile": "./data/suc-core-conll/aa05_fixed.conll"
+}

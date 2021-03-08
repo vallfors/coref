@@ -6,9 +6,11 @@ import json
 class Config:
     useGoldMentions: bool
     algorithm: str
+    inputFile: str
 
     def __init__(self, filename: str):
         with open(filename) as f:
             configDict = json.load(f)
         self.useGoldMentions = configDict['useGoldMentions']
         self.algorithm = configDict['algorithm']
+        self.inputFile = configDict['inputFile']
