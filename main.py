@@ -11,8 +11,8 @@ def main():
 
     args = parser.parse_args()
     config = Config(args.configFile)
-    obj = loadFromFile(config.inputFile)
-    doc = Document(obj)
+    conllObj = loadFromFile(config.inputFile)
+    doc = documentFromConll(conllObj)
     predictCoreference(doc, config)
     stanzaAnnotator = StanzaAnnotator()
     stanzaAnnotator.annotateDocument(doc)
