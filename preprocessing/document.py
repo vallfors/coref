@@ -1,4 +1,5 @@
 from typing import Dict, List
+import stanza
 
 from preprocessing.read_conll import CoNLLFile
 
@@ -51,6 +52,8 @@ def printClusters(mentions: Dict[int, Mention], clusters: Dict[int, List[int]], 
 class Document:
     docName: str
     text: str
+    stanzaAnnotation: stanza.models.common.doc.Document
+
     goldMentions: Dict[int, Mention]
     goldClusters: Dict[int, List[int]]
 
