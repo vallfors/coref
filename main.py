@@ -12,17 +12,17 @@ def main():
     args = parser.parse_args()
     config = Config(args.configFile)
     conllObj = loadFromFile(config.inputFile)
-    doc = documentFromConll(conllObj)
-    predictCoreference(doc, config)
-    stanzaAnnotator = StanzaAnnotator()
-    stanzaAnnotator.annotateDocument(doc)
-    print(doc.stanzaAnnotation)
-    #for id, mention in doc.predictedMentions.items():
-    #    print("{} {}".format(mention.id, mention.text))
-    # for id, cluster in doc.predictedClusters.items():
-    #     print(id)
-    #     for mentionId in cluster:
-    #         print(doc.predictedMentions[mentionId].text)
+    doc = documentsFromTextinatorFile('./data/textinator/example.json')[0]
+    #predictCoreference(doc, config)
+    #stanzaAnnotator = StanzaAnnotator()
+    #stanzaAnnotator.annotateDocument(doc)
+    #print(doc.stanzaAnnotation)
+    for id, mention in doc.goldMentions.items():
+        print("{} {}".format(mention.id, mention.text))
+    for id, cluster in doc.goldClusters.items():
+         print(id)
+         for mentionId in cluster:
+             print(doc.goldMentions[mentionId].text)
 
 if __name__ == "__main__":
     main()

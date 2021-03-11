@@ -1,5 +1,6 @@
 from typing import Dict, List
 import stanza
+import json
 
 from preprocessing.read_conll import CoNLLFile
 
@@ -120,3 +121,34 @@ def documentFromConll(conll: CoNLLFile) -> Document:
         idCounter += 1
 
     return doc
+
+def documentsFromTextinatorFile(filename: str) -> List[Document]:
+    with open(filename) as f:
+        jsonData = json.load(f)
+    docs = []
+    for jsonDocument in jsonData['data']:
+        doc = Document()
+        doc.text = jsonDocument['context']
+        doc.docName = filename
+
+        # Assign id:s to mentions and clusters and add them to the document
+        clusterId = 0
+        mentionId = 0
+        doc.goldMentions = {}
+        doc.goldClusters = {}
+        for relation in jsonDocument['relations'].values():
+            cluster = []
+            for node in relation['nodes']:
+                mention = Mention()
+                mention.cluster = clusterId
+                mention.startPos = node['start']
+                mention.endPos = node['end']
+                mention.id = mentionId
+                mention.text = node['text']
+                doc.goldMentions[mentionId] = mention
+                cluster.append(mentionId)
+                mentionId += 1
+            doc.goldClusters[clusterId] = cluster
+            clusterId += 1
+        docs.append(doc)
+    return docs
