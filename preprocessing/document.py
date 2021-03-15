@@ -61,6 +61,10 @@ class Document:
 
     predictedMentions: Dict[int, Mention]
     predictedClusters: Dict[int, List[int]]
+
+    # A list of eligible mentions in the order they should be processed.
+    # An eligible mention is a mention that is first in its cluster. 
+    eligibleMentions: List[Mention]
     
     def printGold(self):
         printClusters(self.goldMentions, self.goldClusters, self.text)

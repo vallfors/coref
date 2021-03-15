@@ -12,8 +12,9 @@ def main():
     args = parser.parse_args()
     config = Config(args.configFile)
     conllObj = loadFromFile(config.inputFile)
-    doc = documentsFromTextinatorFile('./data/textinator/example.json')[0]
-    #predictCoreference(doc, config)
+    doc = documentFromConll(conllObj)
+    predictCoreference(doc, config)
+    doc.printPredicted()
     #stanzaAnnotator = StanzaAnnotator()
     #stanzaAnnotator.annotateDocument(doc)
     #print(doc.stanzaAnnotation)
