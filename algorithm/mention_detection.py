@@ -2,7 +2,7 @@ from preprocessing.document import Document, Mention
 from collections import deque
 import operator
 
-def printSubtree(sentence, word):
+def getSubtree(sentence, word):
     children = {}
     for w in sentence.words:
         if w.head not in children:
@@ -19,12 +19,9 @@ def printSubtree(sentence, word):
         for c in children[v.id]:
             q.append(c)
     results.sort(key=operator.attrgetter('id'))
-    print()
     if results[0].deprel == 'case':
         del results[0]
-    for w in results:
-        print(f'{w.text} ', end='')
-    print()
+    return results
 
 
 def candidatePos(word) -> bool:
@@ -34,9 +31,29 @@ def candidatePos(word) -> bool:
         return False
     return True
 
-# Detects mentions
+def createMention(wordList, id: int) -> Mention:
+    mention = Mention()
+    mention.id = id
+
+    firstWord = wordList[0]
+    lastWord = wordList[len(wordList)-1]
+    # The misc field is formated as "start_char=4388|end_char=4392"
+    # And we take the start_char from the first word, and end_char from the last word
+    mention.startPos = int(firstWord.misc.split('|')[0].split('=')[1])
+    mention.endPos = int(lastWord.misc.split('|')[1].split('=')[1])
+
+    mention.text = ''
+    for word in wordList:
+        mention.text += word.text + ' '
+    return mention
+
+# Detects mentions and adds them to the predicted mentions of the document
 def mentionDetection(doc: Document):
+    doc.predictedMentions = {}
+    currentMentionId = 0
     for sentence in doc.stanzaAnnotation.sentences:
         for word in sentence.words:
             if candidatePos(word):
-                printSubtree(sentence, word)
+                wordList = getSubtree(sentence, word)
+                doc.predictedMentions[currentMentionId] = createMention(wordList, currentMentionId)
+                currentMentionId += 1

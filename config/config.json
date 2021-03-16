@@ -1,5 +1,5 @@
 {
-    "useGoldMentions": true,
+    "useGoldMentions": false,
     "algorithm": "multipass",
-    "inputFile": "./data/suc-core-conll/aa05_fixed.conll"
+    "inputFile": "./data/textinator/example.json"
 }

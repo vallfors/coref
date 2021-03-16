@@ -1,9 +1,12 @@
 from argparse import ArgumentParser
+from evaluate.mention_matching import matchMentions
 
 from preprocessing.document import *
 from preprocessing.config import *
 from algorithm.basic_algorithm import *
 from preprocessing.stanza_processor import *
+from algorithm.mention_detection import mentionDetection
+from evaluate.mention_matching import *
 
 def main():
     parser = ArgumentParser()
@@ -11,19 +14,15 @@ def main():
 
     args = parser.parse_args()
     config = Config(args.configFile)
-    conllObj = loadFromFile(config.inputFile)
-    doc = documentFromConll(conllObj)
-    predictCoreference(doc, config)
-    doc.printPredicted()
-    #stanzaAnnotator = StanzaAnnotator()
-    #stanzaAnnotator.annotateDocument(doc)
-    #print(doc.stanzaAnnotation)
-    for id, mention in doc.goldMentions.items():
-        print("{} {}".format(mention.id, mention.text))
-    for id, cluster in doc.goldClusters.items():
-         print(id)
-         for mentionId in cluster:
-             print(doc.goldMentions[mentionId].text)
 
+    doc = getDocumentFromFile(config.inputFile)
+    stanzaAnnotator = StanzaAnnotator()
+    stanzaAnnotator.annotateDocument(doc)
+    if not config.useGoldMentions:
+        mentionDetection(doc)
+    predictCoreference(doc, config)
+    matchMentions(doc)
+    doc.printPredicted()
+    
 if __name__ == "__main__":
     main()
