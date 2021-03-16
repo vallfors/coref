@@ -1,8 +1,9 @@
 from typing import Dict, List
 import stanza
 import json
+import os
 
-from preprocessing.read_conll import CoNLLFile
+from preprocessing.read_conll import CoNLLFile, loadFromFile
 
 class bcolors:
     HEADER = '\033[95m'
@@ -156,3 +157,18 @@ def documentsFromTextinatorFile(filename: str) -> List[Document]:
             clusterId += 1
         docs.append(doc)
     return docs
+
+def getDocumentFromFile(filename: str) -> Document:
+    _, extension = os.path.splitext(filename)
+    if extension == '.conllu':
+        conllObj = loadFromFile(filename)
+        return documentFromConll(conllObj)
+    if extension == '.txt':
+        with open(filename) as f:
+            text = f.readlines()
+        return documentFromRawText(filename, text)
+    if extension == '.json':
+        # A textinator file may contain multiple documents, but for now we just take the first one
+        return documentsFromTextinatorFile(filename)[0]
+    else:
+        raise Exception('Invalid file extension of document file')
