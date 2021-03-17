@@ -31,7 +31,7 @@ def candidatePos(word) -> bool:
         return False
     return True
 
-def createMention(wordList, id: int) -> Mention:
+def createMention(wordList, id: int, sentenceId: int) -> Mention:
     mention = Mention()
     mention.id = id
 
@@ -45,15 +45,20 @@ def createMention(wordList, id: int) -> Mention:
     mention.text = ''
     for word in wordList:
         mention.text += word.text + ' '
+
+    mention.stanzaIds = []
+    for word in wordList:
+        mention.stanzaIds.append(word.id)
+    mention.stanzaSentence = sentenceId
     return mention
 
 # Detects mentions and adds them to the predicted mentions of the document
 def mentionDetection(doc: Document):
     doc.predictedMentions = {}
     currentMentionId = 0
-    for sentence in doc.stanzaAnnotation.sentences:
+    for sentenceId, sentence in enumerate(doc.stanzaAnnotation.sentences):
         for word in sentence.words:
             if candidatePos(word):
                 wordList = getSubtree(sentence, word)
-                doc.predictedMentions[currentMentionId] = createMention(wordList, currentMentionId)
+                doc.predictedMentions[currentMentionId] = createMention(wordList, currentMentionId, sentenceId)
                 currentMentionId += 1

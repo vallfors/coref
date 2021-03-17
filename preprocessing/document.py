@@ -23,6 +23,9 @@ class Mention:
     endPos: int
     cluster: int
 
+    stanzaSentence: int
+    stanzaIds: List[int]
+
 # Prints one cluster at a time, by displaying the text with characters that belong to the cluster highlighted.
 # The text shown begins 30 characters before the first mention in the cluster, and ends 30 characters after the last.
 # Waits for user input between each cluster
