@@ -22,7 +22,7 @@ def matchMentions(doc: Document):
 
     for goldMention in doc.goldMentions.values():
         if goldMention.id not in doc.goldToPredicted:
-            print(goldMention.text)
+            falseNegatives +=1
 
     for predictedMention in doc.predictedMentions.values():
         if predictedMention.id not in doc.predictedToGold:
