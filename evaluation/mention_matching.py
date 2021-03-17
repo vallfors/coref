@@ -1,8 +1,8 @@
 from preprocessing.document import Document
 
 def matchMentions(doc: Document):
-    predictedToGold = {}
-    goldToPredicted = {}
+    doc.predictedToGold = {}
+    doc.goldToPredicted = {}
 
     goldMentionFromPositions = {}
     for goldMention in doc.goldMentions.values():
@@ -10,24 +10,24 @@ def matchMentions(doc: Document):
     for predictedMention in doc.predictedMentions.values():
         if (predictedMention.startPos, predictedMention.endPos) in goldMentionFromPositions:
             goldMentionId = goldMentionFromPositions[predictedMention.startPos, predictedMention.endPos]
-            predictedToGold[predictedMention.id] = goldMentionId
-            goldToPredicted[goldMentionId] = predictedMention.id
+            doc.predictedToGold[predictedMention.id] = goldMentionId
+            doc.goldToPredicted[goldMentionId] = predictedMention.id
 
     correct = 0
     falseNegatives = 0
     falsePositives = 0
 
-    for predicted, gold in predictedToGold.items():
+    for predicted, gold in doc.predictedToGold.items():
         correct += 1
 
     for goldMention in doc.goldMentions.values():
-        if goldMention.id not in goldToPredicted:
+        if goldMention.id not in doc.goldToPredicted:
             print(goldMention.text)
 
     for predictedMention in doc.predictedMentions.values():
-        if predictedMention.id not in predictedToGold:
+        if predictedMention.id not in doc.predictedToGold:
             falsePositives += 1
-            
+
     precision = float(correct)/(float(correct)+float(falsePositives))
     recall = float(correct)/(float(correct)+float(falseNegatives))
     print(f'Correct mentions: {correct}')

@@ -63,6 +63,11 @@ class Document:
     predictedMentions: Dict[int, Mention]
     predictedClusters: Dict[int, List[int]]
 
+    # Mappings between gold and predicted mentions.
+    # Not all mappings will be present, since the mention prediction is not perfect
+    goldToPredicted: Dict[int, int]
+    predictedToGold: Dict[int, int]
+
     # A list of eligible mentions in the order they should be processed.
     # An eligible mention is a mention that is first in its cluster. 
     eligibleMentions: List[Mention]
