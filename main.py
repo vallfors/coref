@@ -7,6 +7,7 @@ from preprocessing.stanza_processor import *
 from algorithm.mention_detection import mentionDetection
 from evaluation.mention_matching import *
 from evaluation.cluster_matching import *
+from evaluation.score import writeConllForScoring
 
 def main():
     parser = ArgumentParser()
@@ -21,8 +22,11 @@ def main():
     if not config.useGoldMentions:
         mentionDetection(doc)
     predictCoreference(doc, config)
+    
     matchMentions(doc)
-    compareClusters(doc)
+    #compareClusters(doc)
+    addStanzaLinksToGoldMentions(doc)
+    writeConllForScoring(doc)
     
 if __name__ == "__main__":
     main()

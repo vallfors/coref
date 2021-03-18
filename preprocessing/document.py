@@ -139,11 +139,12 @@ def documentsFromTextinatorFile(filename: str) -> List[Document]:
     with open(filename) as f:
         jsonData = json.load(f)
     docs = []
+    counter = 0
     for jsonDocument in jsonData['data']:
         doc = Document()
         doc.text = jsonDocument['context']
-        doc.docName = filename
-
+        doc.docName = 'textinator' + str(counter)
+        counter+=1
         # Assign id:s to mentions and clusters and add them to the document
         clusterId = 0
         mentionId = 0
