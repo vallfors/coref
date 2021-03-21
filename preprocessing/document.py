@@ -4,6 +4,7 @@ import json
 import os
 
 from preprocessing.read_conll import CoNLLFile, loadFromFile
+from algorithm.features import Features
 
 class bcolors:
     HEADER = '\033[95m'
@@ -25,6 +26,8 @@ class Mention:
 
     stanzaSentence: int
     stanzaIds: List[int]
+
+    features: Features
 
 # Prints one cluster at a time, by displaying the text with characters that belong to the cluster highlighted.
 # The text shown begins 30 characters before the first mention in the cluster, and ends 30 characters after the last.

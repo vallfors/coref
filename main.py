@@ -8,6 +8,7 @@ from algorithm.mention_detection import mentionDetection
 from evaluation.mention_matching import *
 from evaluation.cluster_matching import *
 from evaluation.score import writeConllForScoring
+from algorithm.add_features import addFeatures
 
 def main():
     parser = ArgumentParser()
@@ -21,11 +22,15 @@ def main():
     stanzaAnnotator.annotateDocument(doc)
     if not config.useGoldMentions:
         mentionDetection(doc)
+    else:
+        doc.predictedMentions = doc.goldMentions
+    addStanzaLinksToGoldMentions(doc)
+    addFeatures(doc)
     predictCoreference(doc, config)
     
     matchMentions(doc)
     #compareClusters(doc)
-    addStanzaLinksToGoldMentions(doc)
+    
     writeConllForScoring(doc)
     
 if __name__ == "__main__":
