@@ -5,6 +5,8 @@ import operator
 def getSubtree(sentence, word):
     children = {}
     for w in sentence.words:
+        if w.deprel == 'orphan':
+            continue
         if w.head not in children:
             children[w.head] = []
         children[w.head].append(w)
@@ -19,15 +21,22 @@ def getSubtree(sentence, word):
         for c in children[v.id]:
             q.append(c)
     results.sort(key=operator.attrgetter('id'))
-    if results[0].deprel == 'case':
+
+    if results[0].deprel in ['case', 'cc', 'punct', 'mark']:
         del results[0]
+
+    for id, word in enumerate(results):
+        if word.upos == 'PUNCT':
+             return results[:id]
     return results
 
 
 def candidatePos(word) -> bool:
-    if word.upos not in ['NOUN', 'PROPN', 'DET', 'PRON']:
+    xpos = word.xpos.split('|')[0]
+    # Possibly 'DT' should also be added
+    if xpos not in ['PS', 'PN', 'PM', 'NN']:
         return False
-    if word.deprel in ['det', 'nmod', 'flat:name']:
+    if word.deprel in ['det', 'flat:name', 'expl']:
         return False
     return True
 
@@ -58,7 +67,10 @@ def mentionDetection(doc: Document):
     currentMentionId = 0
     for sentenceId, sentence in enumerate(doc.stanzaAnnotation.sentences):
         for word in sentence.words:
+
             if candidatePos(word):
                 wordList = getSubtree(sentence, word)
+                if len(wordList) == 0:
+                    continue
                 doc.predictedMentions[currentMentionId] = createMention(wordList, currentMentionId, sentenceId)
                 currentMentionId += 1
