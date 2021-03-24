@@ -2,10 +2,10 @@ from preprocessing.document import Document, Mention
 from collections import deque
 import operator
 
-def getSubtree(sentence, word):
+def getSubtrees(sentence, word):
     children = {}
     for w in sentence.words:
-        if w.deprel == 'orphan':
+        if w.deprel in ['orphan', 'appos']:
             continue
         if w.head not in children:
             children[w.head] = []
@@ -22,13 +22,30 @@ def getSubtree(sentence, word):
             q.append(c)
     results.sort(key=operator.attrgetter('id'))
 
-    if results[0].deprel in ['case', 'cc', 'punct', 'mark']:
-        del results[0]
+    allResults = {}
+    for id, w in enumerate(results):
+        if w.deprel == 'cop':
+            allResults[str(results[id+1:])] = results[id+1:]
 
-    for id, word in enumerate(results):
-        if word.upos == 'PUNCT':
-             return results[:id]
-    return results
+    for id, w in enumerate(results):
+        if w.text == 'och':
+            allResults[str(results[:id])] = results[:id]
+    allResults[str(results)] = results
+
+    for r in allResults.values():
+        if len(r) == 0:
+            continue
+        while r[0].deprel in ['case', 'cc', 'punct', 'mark']:
+            del r[0]
+
+        while r[len(r)-1].deprel == 'punct' and r[len(r)-1].text != "'":
+            del r[len(r)-1]
+
+        for id, w in enumerate(r):
+            if w.text == ',':
+                r = r[:id]
+
+    return allResults.values()
 
 
 def candidatePos(word) -> bool:
@@ -36,7 +53,8 @@ def candidatePos(word) -> bool:
     # Possibly 'DT' should also be added
     if xpos not in ['PS', 'PN', 'PM', 'NN']:
         return False
-    if word.deprel in ['det', 'flat:name', 'expl']:
+ 
+    if word.deprel in ['det', 'flat:name', 'expl', 'fixed', 'nummod', 'flat', 'goeswith', 'compound', 'appos']:
         return False
     return True
 
@@ -54,7 +72,7 @@ def createMention(wordList, id: int, sentenceId: int) -> Mention:
     mention.text = ''
     for word in wordList:
         mention.text += word.text + ' '
-
+    mention.text = mention.text[:-1]
     mention.stanzaIds = []
     for word in wordList:
         mention.stanzaIds.append(word.id)
@@ -67,10 +85,10 @@ def mentionDetection(doc: Document):
     currentMentionId = 0
     for sentenceId, sentence in enumerate(doc.stanzaAnnotation.sentences):
         for word in sentence.words:
-
             if candidatePos(word):
-                wordList = getSubtree(sentence, word)
-                if len(wordList) == 0:
-                    continue
-                doc.predictedMentions[currentMentionId] = createMention(wordList, currentMentionId, sentenceId)
-                currentMentionId += 1
+                wordLists = getSubtrees(sentence, word)
+                for wordList in wordLists:
+                    if len(wordList) == 0:
+                        continue
+                    doc.predictedMentions[currentMentionId] = createMention(wordList, currentMentionId, sentenceId)
+                    currentMentionId += 1
