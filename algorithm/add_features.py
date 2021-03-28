@@ -1,8 +1,70 @@
 from algorithm.features import Features
 from preprocessing.document import Document
 import re
+from transformers import pipeline
+
+
+animatePronouns = ['han', 'hon', 'jag', 'honom', 'henne', 'hans', 'hennes', 'min', 'mitt', 'din', 'ditt', 'er', 'ert', 'eran', 'vår', 'våran', 'vårt', 'ni', 'vi']
+animateNerTags = ['PER', 'ORG']
+inanimateNerTags = ['TME', 'LOC', 'EVN']
+
+singularPronouns = ['han', 'hon', 'jag', 'du', 'honom', 'henne', 'hans', 'hennes', 'dess', 'din', 'ditt', 'min', 'mitt']
+pluralPronouns = ['deras', 'vår', 'våran', 'vårt', 'vi']
+pluralOrSingularPronouns = ['sin', 'sig', 'er', 'ert', 'eran', 'ni']
+
+def extractAnimacy(headWord, nerTag):
+    if headWord.text in animatePronouns:
+        return 'ANIMATE'
+    if nerTag in animateNerTags:
+        return 'ANIMATE'
+    if nerTag in inanimateNerTags:
+        return 'INANIMATE'
+    return 'UNKNOWN'
+
+def extractNaturalGender(headWord):
+    if headWord.text in ['han', 'honom', 'hans']:
+        return 'MALE'
+    if headWord.text in ['hon', 'henne', 'hennes']:
+        return 'FEMALE'
+    return 'UNKNOWN'
+
+def extractGender(headWord):
+    # I deliberatily skip the masculine case, which is very unusual
+    if 'NEU' in headWord.xpos and 'UTR' in headWord.xpos:
+        return 'UNKNOWN'
+    if 'NEU' in headWord.xpos:
+        return 'NEU'
+    if 'UTR' in headWord.xpos:
+       return 'UTR'
+    return 'UNKNOWN'
+
+def extractNumber(headWord, nerTag):
+    if headWord.text in singularPronouns:
+        return 'SIN'
+    if headWord.text in pluralPronouns:
+        return 'PLU'
+    if headWord.text in pluralOrSingularPronouns:
+        return 'UNKNOWN'
+    if nerTag in ['ORG']:
+        return 'UNKNOWN' # Organizations can be referred to both by plural and singular references
+    if 'SIN' in headWord.xpos and 'PLU' in headWord.xpos:
+        return 'UNKNOWN'
+    if 'SIN' in headWord.xpos:
+        return 'SIN'
+    if 'PLU' in headWord.xpos:
+        return'PLU'
+    return 'UNKNOWN'
+
+def extractDefiniteness(headWord):
+    if 'DEF' in headWord.xpos:
+        return 'DEF'
+    if 'IND' in headWord.xpos:
+        return 'IND'
+    else:
+        return 'UNKNOWN'
 
 def addFeatures(doc: Document):
+    nlp = pipeline('ner', model='KB/bert-base-swedish-cased-ner', tokenizer='KB/bert-base-swedish-cased-ner')
     for mention in doc.predictedMentions.values():
         mention.features = Features()
 
@@ -15,33 +77,19 @@ def addFeatures(doc: Document):
                 headWord = word
         mention.features.headWord = headWord.id
 
-        # POS
-        mention.features.upos = headWord.upos
-
-        # Plural/singular
-        if 'SIN' in headWord.xpos:
-            mention.features.number = 'SIN'
-        elif 'PLU' in headWord.xpos:
-            mention.features.number = 'PLU'
+        # Named entity recognition
+        nerResult = nlp(mention.text)
+        if len(nerResult) < 1:
+            mention.features.nerTag = 'UNKNOWN'
         else:
-            mention.features.number = 'UNKNOWN'
+            mention.features.nerTag = nerResult[0]['entity']
 
-        # Definitiness
-        if 'DEF' in headWord.xpos:
-            mention.features.definite = 'DEF'
-        elif 'IND' in headWord.xpos:
-            mention.features.definite = 'IND'
-        else:
-            mention.features.definite = 'UNKNOWN'
+        mention.features.upos = headWord.upos        
+        mention.features.headWordDeprel = headWord.deprel
+        mention.features.headWordLemma = headWord.lemma
         
-        # Gender
-        # I deliberatily skip the masculine case, which is very unusual
-        if 'NEU' in headWord.xpos and 'UTR' in headWord.xpos:
-            mention.features.gender = 'NEU/UTR'
-        elif 'NEU' in headWord.xpos:
-            mention.features.gender = 'NEU'
-        elif 'UTR' in headWord.xpos:
-            mention.features.gender = 'UTR'
-        else:
-            mention.features.gender = 'UNKNOWN'
-
+        mention.features.number = extractNumber(headWord, mention.features.nerTag)
+        mention.features.animacy = extractAnimacy(headWord, mention.features.nerTag)
+        mention.features.naturalGender = extractNaturalGender(headWord)
+        mention.features.gender = extractGender(headWord)
+        mention.features.definite = extractDefiniteness(headWord)
