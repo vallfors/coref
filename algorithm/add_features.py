@@ -9,7 +9,7 @@ animateNerTags = ['PER', 'ORG']
 inanimateNerTags = ['TME', 'LOC', 'EVN']
 
 singularPronouns = ['han', 'hon', 'jag', 'du', 'honom', 'henne', 'hans', 'hennes', 'dess', 'din', 'ditt', 'min', 'mitt']
-pluralPronouns = ['deras', 'vår', 'våran', 'vårt', 'vi']
+pluralPronouns = ['deras', 'vår', 'våran', 'vårt', 'vi', 'de', 'dem']
 pluralOrSingularPronouns = ['sin', 'sig', 'er', 'ert', 'eran', 'ni']
 
 def extractAnimacy(headWord, nerTag):
