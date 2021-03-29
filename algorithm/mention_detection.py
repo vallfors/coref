@@ -26,6 +26,7 @@ def getSubtrees(sentence, word):
     for id, w in enumerate(results):
         if w.deprel == 'cop':
             allResults[str(results[id+1:])] = results[id+1:]
+            
 
     for id, w in enumerate(results):
         if w.text == 'och':
@@ -35,9 +36,11 @@ def getSubtrees(sentence, word):
     for r in allResults.values():
         if len(r) == 0:
             continue
-        while r[0].deprel in ['case', 'cc', 'punct', 'mark']:
+        while len(r) > 0 and r[0].deprel in ['case', 'cc', 'punct', 'mark']:
             del r[0]
-
+        
+        if len(r) == 0:
+            continue
         while r[len(r)-1].deprel == 'punct' and r[len(r)-1].text != "'":
             del r[len(r)-1]
 
