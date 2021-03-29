@@ -19,6 +19,8 @@ def writeGoldOrPredictedForScoring(doc: Document, gold: bool):
         outFilePath = f'evaluation/predictedClusters/{doc.docName}'
     
     for clusterId, cluster in clusters.items():
+        if len(cluster) <= 1:
+            continue
         for mentionId in cluster:
             mention = mentions[mentionId]
             if len(mention.stanzaIds) == 1:
