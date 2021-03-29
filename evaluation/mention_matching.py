@@ -20,12 +20,24 @@ def matchMentions(doc: Document):
     for predicted, gold in doc.predictedToGold.items():
         correct += 1
 
+    #print('-----------Printing missed mentions----------')
     for goldMention in doc.goldMentions.values():
         if goldMention.id not in doc.goldToPredicted:
+            # print(goldMention.text)
+            # for word in doc.stanzaAnnotation.sentences[goldMention.stanzaSentence].words:
+            #     print(word.text, end = ' ')
+
+            # print('\n----------')
             falseNegatives +=1
 
+    #print('-----------Printing extra mentions----------')
     for predictedMention in doc.predictedMentions.values():
         if predictedMention.id not in doc.predictedToGold:
+            # print(predictedMention.text)
+            # for word in doc.stanzaAnnotation.sentences[predictedMention.stanzaSentence].words:
+            #     print(word.text, end = ' ')
+
+            # print('\n----------')
             falsePositives += 1
 
     precision = float(correct)/(float(correct)+float(falsePositives))
