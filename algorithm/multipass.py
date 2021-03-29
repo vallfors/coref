@@ -95,11 +95,16 @@ def pronounResolution(doc: Document, mention: Mention, candidateAntecedent: Ment
     if mention.features.gender != 'UNKNOWN' and candidateAntecedent.features.gender != 'UNKNOWN':
         if mention.features.gender != candidateAntecedent.features.gender:
             return False
+    if mention.features.naturalGender != 'UNKNOWN' and candidateAntecedent.features.naturalGender != 'UNKNOWN':
+        if mention.features.naturalGender != candidateAntecedent.features.naturalGender:
+            return False
     if mention.features.number != 'UNKNOWN' and candidateAntecedent.features.number != 'UNKNOWN':
         if mention.features.number != candidateAntecedent.features.number:
             return False
-    print(mention.text)
-    print(candidateAntecedent.text)
+    if mention.features.animacy != 'UNKNOWN' and candidateAntecedent.features.animacy != 'UNKNOWN':
+        if mention.features.animacy != candidateAntecedent.features.animacy:
+            return False
+
     return True
 
 def genetiveResolution(doc: Document, mention: Mention, ca: Mention) -> bool:
