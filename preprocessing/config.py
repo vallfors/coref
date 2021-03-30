@@ -1,4 +1,5 @@
 import json
+from typing import List
 
 # A configuration for the coreference resolution.
 # This object should contain information about which algorithm to run,
@@ -7,6 +8,12 @@ class Config:
     useGoldMentions: bool
     algorithm: str
     inputFile: str
+    useAllDocs: bool
+    docId: int
+    multipassSieves: List[str]
+    writeForScoring: bool
+    debugMentionDetection: bool
+    compareClusters: bool
 
     def __init__(self, filename: str):
         with open(filename) as f:
@@ -14,3 +21,11 @@ class Config:
         self.useGoldMentions = configDict['useGoldMentions']
         self.algorithm = configDict['algorithm']
         self.inputFile = configDict['inputFile']
+        self.useAllDocs = configDict['useAllDocs']
+        if not self.useAllDocs:
+            self.docId = configDict['docId']
+        if configDict['algorithm'] == 'multipass':
+            self.multipassSieves = configDict['multipassSieves']
+        self.writeForScoring = configDict['writeForScoring']
+        self.debugMentionDetection = configDict['debugMentionDetection']
+        self.compareClusters = configDict['compareClusters']

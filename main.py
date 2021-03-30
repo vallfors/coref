@@ -1,9 +1,16 @@
 from argparse import ArgumentParser
 
+from transformers import pipeline
+
 from preprocessing.document import *
 from preprocessing.config import *
 from algorithm.basic_algorithm import *
 from preprocessing.stanza_processor import *
+from algorithm.mention_detection import mentionDetection
+from evaluation.mention_matching import *
+from evaluation.cluster_matching import *
+from evaluation.score import writeConllForScoring
+from algorithm.add_features import addFeatures
 
 def main():
     parser = ArgumentParser()
@@ -11,18 +18,29 @@ def main():
 
     args = parser.parse_args()
     config = Config(args.configFile)
-    conllObj = loadFromFile(config.inputFile)
-    doc = documentsFromTextinatorFile('./data/textinator/example.json')[0]
-    #predictCoreference(doc, config)
-    #stanzaAnnotator = StanzaAnnotator()
-    #stanzaAnnotator.annotateDocument(doc)
-    #print(doc.stanzaAnnotation)
-    for id, mention in doc.goldMentions.items():
-        print("{} {}".format(mention.id, mention.text))
-    for id, cluster in doc.goldClusters.items():
-         print(id)
-         for mentionId in cluster:
-             print(doc.goldMentions[mentionId].text)
 
+    stanzaAnnotator = StanzaAnnotator()
+    nerPipeline = pipeline('ner', model='KB/bert-base-swedish-cased-ner', tokenizer='KB/bert-base-swedish-cased-ner')
+    docs = documentsFromTextinatorFile(config.inputFile)
+    if not config.useAllDocs:
+        if config.docId >= len(docs):
+            raise Exception(f'Document id {config.docId} out of bounds, check config')
+        docs = [docs[config.docId]]
+    for doc in docs:
+        stanzaAnnotator.annotateDocument(doc)
+        if not config.useGoldMentions:
+            mentionDetection(doc)
+        else:
+            doc.predictedMentions = doc.goldMentions
+        addStanzaLinksToGoldMentions(doc)
+        addFeatures(doc, nerPipeline)
+        predictCoreference(doc, config)
+        
+        matchMentions(doc, config)
+        if config.compareClusters:
+            compareClusters(doc)
+    if config.writeForScoring:
+        writeConllForScoring(docs)
+    
 if __name__ == "__main__":
     main()

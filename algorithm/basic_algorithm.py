@@ -1,6 +1,7 @@
 from preprocessing.document import *
 from preprocessing.config import *
 from preprocessing.read_conll import *
+from algorithm.multipass import *
 
 # Placeholder coreference algorithm that clusters all mentions that have exactly the same string
 # and no others.
@@ -30,5 +31,7 @@ def predictCoreference(doc: Document, config: Config):
 
     if config.algorithm == "exactstringmatch":
         exactStringMatch(doc, config)
+    elif config.algorithm == "multipass":
+        multiPass(doc, config)
     else:
         raise Exception("Configured to use algorithm {}, but no such algorithm is implemented".format(config.algorithm))

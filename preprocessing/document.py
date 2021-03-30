@@ -1,8 +1,10 @@
 from typing import Dict, List
 import stanza
 import json
+import os
 
-from preprocessing.read_conll import CoNLLFile
+from preprocessing.read_conll import CoNLLFile, loadFromFile
+from algorithm.features import Features
 
 class bcolors:
     HEADER = '\033[95m'
@@ -21,6 +23,11 @@ class Mention:
     startPos: int
     endPos: int
     cluster: int
+
+    stanzaSentence: int
+    stanzaIds: List[int]
+
+    features: Features
 
 # Prints one cluster at a time, by displaying the text with characters that belong to the cluster highlighted.
 # The text shown begins 30 characters before the first mention in the cluster, and ends 30 characters after the last.
@@ -61,6 +68,15 @@ class Document:
 
     predictedMentions: Dict[int, Mention]
     predictedClusters: Dict[int, List[int]]
+
+    # Mappings between gold and predicted mentions.
+    # Not all mappings will be present, since the mention prediction is not perfect
+    goldToPredicted: Dict[int, int]
+    predictedToGold: Dict[int, int]
+
+    # A list of eligible mentions in the order they should be processed.
+    # An eligible mention is a mention that is first in its cluster. 
+    eligibleMentions: List[Mention]
     
     def printGold(self):
         printClusters(self.goldMentions, self.goldClusters, self.text)
@@ -126,11 +142,12 @@ def documentsFromTextinatorFile(filename: str) -> List[Document]:
     with open(filename) as f:
         jsonData = json.load(f)
     docs = []
+    counter = 0
     for jsonDocument in jsonData['data']:
         doc = Document()
         doc.text = jsonDocument['context']
-        doc.docName = filename
-
+        doc.docName = 'textinator' + str(counter)
+        counter+=1
         # Assign id:s to mentions and clusters and add them to the document
         clusterId = 0
         mentionId = 0
@@ -152,3 +169,18 @@ def documentsFromTextinatorFile(filename: str) -> List[Document]:
             clusterId += 1
         docs.append(doc)
     return docs
+
+def getDocumentFromFile(filename: str) -> Document:
+    _, extension = os.path.splitext(filename)
+    if extension == '.conllu':
+        conllObj = loadFromFile(filename)
+        return documentFromConll(conllObj)
+    if extension == '.txt':
+        with open(filename) as f:
+            text = f.readlines()
+        return documentFromRawText(filename, text)
+    if extension == '.json':
+        # A textinator file may contain multiple documents, but for now we just take the first one
+        return documentsFromTextinatorFile(filename)[0]
+    else:
+        raise Exception('Invalid file extension of document file')
