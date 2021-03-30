@@ -1,12 +1,11 @@
 {
-    "useGoldMentions": false,
+    "useGoldMentions": true,
     "algorithm": "multipass",
     "multipassSieves": ["exactMatch", "genetiveResolution", "pronounResolution"],
     "inputFile": "./data/textinator/example.json",
-    "useAllDocs": false,
-    "docId": 0,
-    "compareClusters": true,
+    "useAllDocs": true,
+    "compareClusters": false,
     "writeForScoring": true,
-    "debugMentionDetection": true
+    "debugMentionDetection": false
 
 }

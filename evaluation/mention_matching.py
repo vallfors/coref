@@ -1,6 +1,7 @@
 from preprocessing.document import Document
+from preprocessing.config import Config
 
-def matchMentions(doc: Document):
+def matchMentions(doc: Document, config: Config):
     doc.predictedToGold = {}
     doc.goldToPredicted = {}
 
@@ -19,31 +20,33 @@ def matchMentions(doc: Document):
 
     for predicted, gold in doc.predictedToGold.items():
         correct += 1
-
-    #print('-----------Printing missed mentions----------')
+    if config.debugMentionDetection:
+        print('-----------Printing missed mentions----------')
     for goldMention in doc.goldMentions.values():
         if goldMention.id not in doc.goldToPredicted:
-            # print(goldMention.text)
-            # for word in doc.stanzaAnnotation.sentences[goldMention.stanzaSentence].words:
-            #     print(word.text, end = ' ')
-
-            # print('\n----------')
             falseNegatives +=1
+            if config.debugMentionDetection:
+                print(goldMention.text)
+                for word in doc.stanzaAnnotation.sentences[goldMention.stanzaSentence].words:
+                    print(word.text, end = ' ')
+                print('\n----------')
 
-    #print('-----------Printing extra mentions----------')
+    if config.debugMentionDetection:
+        print('-----------Printing extra mentions----------')
     for predictedMention in doc.predictedMentions.values():
         if predictedMention.id not in doc.predictedToGold:
-            # print(predictedMention.text)
-            # for word in doc.stanzaAnnotation.sentences[predictedMention.stanzaSentence].words:
-            #     print(word.text, end = ' ')
-
-            # print('\n----------')
             falsePositives += 1
+            if config.debugMentionDetection:
+                print(predictedMention.text)
+                for word in doc.stanzaAnnotation.sentences[predictedMention.stanzaSentence].words:
+                    print(word.text, end = ' ')
 
-    precision = float(correct)/(float(correct)+float(falsePositives))
-    recall = float(correct)/(float(correct)+float(falseNegatives))
-    print(f'Correct mentions: {correct}')
-    print(f'Missed mentions: {falseNegatives}')
-    print(f'Extra mentions: {falsePositives}')
-    print(f'Precision: {precision}')
-    print(f'Recall: {recall}')
+                print('\n----------')
+    if config.debugMentionDetection:
+        precision = float(correct)/(float(correct)+float(falsePositives))
+        recall = float(correct)/(float(correct)+float(falseNegatives))
+        print(f'Correct mentions: {correct}')
+        print(f'Missed mentions: {falseNegatives}')
+        print(f'Extra mentions: {falsePositives}')
+        print(f'Precision: {precision}')
+        print(f'Recall: {recall}')

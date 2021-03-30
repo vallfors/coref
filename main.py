@@ -17,21 +17,27 @@ def main():
     args = parser.parse_args()
     config = Config(args.configFile)
 
-    doc = getDocumentFromFile(config.inputFile)
     stanzaAnnotator = StanzaAnnotator()
-    stanzaAnnotator.annotateDocument(doc)
-    if not config.useGoldMentions:
-        mentionDetection(doc)
-    else:
-        doc.predictedMentions = doc.goldMentions
-    addStanzaLinksToGoldMentions(doc)
-    addFeatures(doc)
-    predictCoreference(doc, config)
-    
-    matchMentions(doc)
-    #compareClusters(doc)
-    
-    writeConllForScoring(doc)
+    docs = documentsFromTextinatorFile(config.inputFile)
+    if not config.useAllDocs:
+        if config.docId >= len(docs):
+            raise Exception(f'Document id {config.docId} out of bounds, check config')
+        docs = [docs[config.docId]]
+    for doc in docs:
+        stanzaAnnotator.annotateDocument(doc)
+        if not config.useGoldMentions:
+            mentionDetection(doc)
+        else:
+            doc.predictedMentions = doc.goldMentions
+        addStanzaLinksToGoldMentions(doc)
+        addFeatures(doc)
+        predictCoreference(doc, config)
+        
+        matchMentions(doc, config)
+        if config.compareClusters:
+            compareClusters(doc)
+    if config.writeForScoring:
+        writeConllForScoring(docs)
     
 if __name__ == "__main__":
     main()

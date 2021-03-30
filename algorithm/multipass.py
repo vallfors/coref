@@ -174,8 +174,12 @@ def multiPassSieve(doc: Document, sieves):
         doSievePass(doc, sieve)
 
 def multiPass(doc: Document, config: Config):
-    sieves = [exactMatch, genetiveResolution, pronounResolution]
-    
+    sieveMapping = {'exactMatch': exactMatch,'genetiveResolution': genetiveResolution, 'lemmaHeadWordMatch': lemmaHeadWordMatch, 'pronounResolution': pronounResolution}
+    sieves = []
+    for s in config.multipassSieves:
+        if not s in sieveMapping:
+            raise Exception(f'Invalid multipass sieve name: {s}')
+        sieves.append(sieveMapping[s])
     # Create a cluster for each mention, containing only that mention
     doc.predictedClusters = {}
     for mention in doc.predictedMentions.values():
