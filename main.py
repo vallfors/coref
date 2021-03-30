@@ -1,5 +1,7 @@
 from argparse import ArgumentParser
 
+from transformers import pipeline
+
 from preprocessing.document import *
 from preprocessing.config import *
 from algorithm.basic_algorithm import *
@@ -18,6 +20,7 @@ def main():
     config = Config(args.configFile)
 
     stanzaAnnotator = StanzaAnnotator()
+    nerPipeline = pipeline('ner', model='KB/bert-base-swedish-cased-ner', tokenizer='KB/bert-base-swedish-cased-ner')
     docs = documentsFromTextinatorFile(config.inputFile)
     if not config.useAllDocs:
         if config.docId >= len(docs):
@@ -30,7 +33,7 @@ def main():
         else:
             doc.predictedMentions = doc.goldMentions
         addStanzaLinksToGoldMentions(doc)
-        addFeatures(doc)
+        addFeatures(doc, nerPipeline)
         predictCoreference(doc, config)
         
         matchMentions(doc, config)

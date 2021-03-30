@@ -1,8 +1,5 @@
 from algorithm.features import Features
 from preprocessing.document import Document
-import re
-from transformers import pipeline
-
 
 animatePronouns = ['han', 'hon', 'jag', 'honom', 'henne', 'hans', 'hennes', 'min', 'mitt', 'din', 'ditt', 'er', 'ert', 'eran', 'vår', 'våran', 'vårt', 'ni', 'vi']
 animateNerTags = ['PER', 'ORG']
@@ -63,8 +60,7 @@ def extractDefiniteness(headWord):
     else:
         return 'UNKNOWN'
 
-def addFeatures(doc: Document):
-    nlp = pipeline('ner', model='KB/bert-base-swedish-cased-ner', tokenizer='KB/bert-base-swedish-cased-ner')
+def addFeatures(doc: Document, nerPipeline):
     for mention in doc.predictedMentions.values():
         mention.features = Features()
 
@@ -78,7 +74,7 @@ def addFeatures(doc: Document):
         mention.features.headWord = headWord.id
 
         # Named entity recognition
-        nerResult = nlp(mention.text)
+        nerResult = nerPipeline(mention.text)
         if len(nerResult) < 1:
             mention.features.nerTag = 'UNKNOWN'
         else:
