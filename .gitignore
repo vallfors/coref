@@ -4,3 +4,4 @@ evaluation/goldClusters/*
 evaluation/predictedClusters/*
 data/*
 __init__.py
+*.joblib
