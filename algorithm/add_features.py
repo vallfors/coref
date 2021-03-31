@@ -1,5 +1,7 @@
+from typing import Dict
+
 from algorithm.features import Features
-from preprocessing.document import Document
+from preprocessing.document import Document, Mention
 
 animatePronouns = ['han', 'hon', 'jag', 'honom', 'henne', 'hans', 'hennes', 'min', 'mitt', 'din', 'ditt', 'er', 'ert', 'eran', 'vår', 'våran', 'vårt', 'ni', 'vi']
 animateNerTags = ['PER', 'ORG']
@@ -60,8 +62,8 @@ def extractDefiniteness(headWord):
     else:
         return 'UNKNOWN'
 
-def addFeatures(doc: Document, nerPipeline):
-    for mention in doc.predictedMentions.values():
+def addFeaturesToMentionDict(doc: Document, nerPipeline, mentions: Dict[int, Mention]):
+    for mention in mentions.values():
         mention.features = Features()
 
         # Finding head word
@@ -89,3 +91,8 @@ def addFeatures(doc: Document, nerPipeline):
         mention.features.naturalGender = extractNaturalGender(headWord)
         mention.features.gender = extractGender(headWord)
         mention.features.definite = extractDefiniteness(headWord)
+
+
+def addFeatures(doc: Document, nerPipeline):
+    addFeaturesToMentionDict(doc, nerPipeline, doc.goldMentions)
+    addFeaturesToMentionDict(doc, nerPipeline, doc.predictedMentions)

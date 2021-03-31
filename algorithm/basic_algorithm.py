@@ -1,3 +1,4 @@
+from algorithm.scaffolding import scaffoldingAlgorithm
 from preprocessing.document import *
 from preprocessing.config import *
 from preprocessing.read_conll import *
@@ -33,5 +34,7 @@ def predictCoreference(doc: Document, config: Config):
         exactStringMatch(doc, config)
     elif config.algorithm == "multipass":
         multiPass(doc, config)
+    elif config.algorithm == 'hcoref':
+        scaffoldingAlgorithm(doc, config)
     else:
         raise Exception("Configured to use algorithm {}, but no such algorithm is implemented".format(config.algorithm))
