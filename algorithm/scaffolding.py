@@ -63,7 +63,7 @@ def scaffoldingAlgorithm(doc: Document, config: Config):
     testSieveModel = joblib.load('testsieve.joblib') 
     sieveMapping = {'testSieve': testSieveModel}
     sieves = []
-    for s in config.multipassSieves:
+    for s in config.scaffoldingSieves:
         if not s in sieveMapping:
             raise Exception(f'Invalid multipass sieve name: {s}')
         sieves.append(sieveMapping[s])

@@ -1,12 +1,11 @@
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.datasets import make_classification
 import operator
 from typing import List
 import joblib
 from random import randint
 
 from preprocessing.document import Mention, Document
-from preprocessing.config import Config
+from hcoref.training_config import TrainingConfig
 
 def getFeatureVector(doc: Document, mention: Mention, antecedent: Mention):
     sentenceDistance = mention.stanzaSentence-antecedent.stanzaSentence
@@ -70,6 +69,5 @@ def trainSieve(docs: List[Document]):
     print(clf.feature_importances_)
     joblib.dump(clf, 'testsieve.joblib') 
 
-def trainAll(docs: List[Document], config: Config):
+def trainAll(docs: List[Document], config: TrainingConfig):
     trainSieve(docs)
-

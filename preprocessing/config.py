@@ -26,6 +26,8 @@ class Config:
             self.docId = configDict['docId']
         if configDict['algorithm'] == 'multipass':
             self.multipassSieves = configDict['multipassSieves']
+        if configDict['algorithm'] == 'hcoref':
+            self.scaffoldingSieves = configDict['scaffoldingSieves']
         self.writeForScoring = configDict['writeForScoring']
         self.debugMentionDetection = configDict['debugMentionDetection']
         self.compareClusters = configDict['compareClusters']
