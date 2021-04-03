@@ -1,7 +1,7 @@
 {
     "useGoldMentions": true,
     "algorithm": "hcoref",
-    "scaffoldingSieves": ["testSieve"],
+    "scaffoldingSieves": ["properSieve", "commonSieve", "properCommonSieve", "pronounSieve"],
     "inputFile": "./data/textinator/example.json",
     "useAllDocs": true,
     "docId": 0,

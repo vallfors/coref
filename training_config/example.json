@@ -1,4 +1,3 @@
 {
-    "sieves": ["testSieve"],
     "inputFile": "./data/textinator/example.json"
 }

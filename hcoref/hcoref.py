@@ -45,29 +45,57 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     
     return antecedents
 
-def trainSieve(docs: List[Document]):
-    X = []
-    y = []
+def trainSieves(docs: List[Document]):
+    properX = []
+    properY = []
+    commonX = []
+    commonY = []
+    properCommonX = []
+    properCommonY = []
+    pronounX = []
+    pronounY = []
     for doc in docs:
         for mention in doc.goldMentions.values():
-            foundPositive = False
             for antecedent in getCandidateAntecedents(doc, mention):
-                if mention.cluster == antecedent.cluster:
-                    if foundPositive:
-                        continue
-                    y.append(1)
-                    foundPositive = True
+                if mention.features.upos == 'PROPN' and antecedent.features.upos == 'PROPN':
+                    X = properX
+                    y = properY
+                elif mention.features.upos == 'NOUN' and antecedent.features.upos == 'NOUN':
+                    X = commonX
+                    y = commonY
+                elif mention.features.upos == 'NOUN' and antecedent.features.upos == 'PROPN':
+                    X = properCommonX
+                    y = properCommonY
+                elif mention.features.upos == 'PRON':
+                    X = pronounX
+                    y = pronounY
                 else:
-                    r = randint(0, 5)
-                    if r > 0:
-                        continue
+                    continue
+                if mention.cluster == antecedent.cluster:
+                    y.append(1)
+                else:
                     y.append(0)
                 X.append(getFeatureVector(doc, mention, antecedent))
 
-    clf = RandomForestClassifier(max_depth=2, random_state=0)
-    clf.fit(X, y)
-    print(clf.feature_importances_)
-    joblib.dump(clf, 'testsieve.joblib') 
+    commonModel = RandomForestClassifier(max_depth=2, random_state=0)
+    commonModel.fit(commonX, commonY)
+    print(commonModel.feature_importances_)
+    joblib.dump(commonModel, 'models/commonModel.joblib') 
+
+    properModel = RandomForestClassifier(max_depth=2, random_state=0)
+    properModel.fit(properX, properY)
+    print(properModel.feature_importances_)
+    joblib.dump(properModel, 'models/properModel.joblib')
+
+    properCommonModel = RandomForestClassifier(max_depth=2, random_state=0)
+    properCommonModel.fit(properCommonX, properCommonY)
+    print(properCommonModel.feature_importances_)
+    joblib.dump(properCommonModel, 'models/properCommonModel.joblib')
+
+    pronounModel = RandomForestClassifier(max_depth=2, random_state=0)
+    pronounModel.fit(pronounX, pronounY)
+    print(pronounModel.feature_importances_)
+    joblib.dump(pronounModel, 'models/pronounModel.joblib') 
 
 def trainAll(docs: List[Document], config: TrainingConfig):
-    trainSieve(docs)
+    trainSieves(docs)

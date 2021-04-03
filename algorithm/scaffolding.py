@@ -6,7 +6,20 @@ import operator
 from typing import List
 import joblib
 
-def useSieve(sieveModel, doc: Document, mention: Mention, antecedent: Mention) -> float:
+def useSieve(sieve, doc: Document, mention: Mention, antecedent: Mention) -> float:
+    name, sieveModel = sieve
+    if name == 'properSieve':
+        if mention.features.upos != 'PROPN' or antecedent.features.upos != 'PROPN':
+            return 0.0
+    if name == 'commonSieve':
+        if mention.features.upos != 'NOUN' or antecedent.features.upos != 'NOUN':
+            return 0.0
+    if name == 'properCommonSieve':
+        if mention.features.upos != 'NOUN' or antecedent.features.upos != 'PROPN':
+            return 0.0 
+    if name == 'pronounSieve':
+        if mention.features.upos != 'PRON' or antecedent.features.upos != 'PRON':
+            return 0.0 
     featureVector = getFeatureVector(doc, mention, antecedent)
     results = sieveModel.predict_proba([featureVector])
     return results[0][1]
@@ -60,13 +73,16 @@ def doSievePasses(doc: Document, sieves):
                 link(doc, mention, bestAntecedent)
 
 def scaffoldingAlgorithm(doc: Document, config: Config):
-    testSieveModel = joblib.load('testsieve.joblib') 
-    sieveMapping = {'testSieve': testSieveModel}
+    properModel = joblib.load('models/properModel.joblib')
+    commonModel = joblib.load('models/commonModel.joblib') 
+    properCommonModel = joblib.load('models/properCommonModel.joblib') 
+    pronounModel = joblib.load('models/pronounModel.joblib') 
+    sieveMapping = {'properSieve': properModel, 'commonSieve': commonModel, 'properCommonSieve': properCommonModel, 'pronounSieve': pronounModel}
     sieves = []
     for s in config.scaffoldingSieves:
         if not s in sieveMapping:
             raise Exception(f'Invalid multipass sieve name: {s}')
-        sieves.append(sieveMapping[s])
+        sieves.append((s, sieveMapping[s]))
     # Create a cluster for each mention, containing only that mention
     doc.predictedClusters = {}
     for mention in doc.predictedMentions.values():
