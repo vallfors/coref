@@ -23,6 +23,7 @@ class Mention:
     startPos: int
     endPos: int
     cluster: int
+    predictedCluster: int
 
     stanzaSentence: int
     stanzaIds: List[int]

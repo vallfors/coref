@@ -1,26 +1,13 @@
+from algorithm.scaffolding import doSievePasses
 from sklearn.ensemble import RandomForestClassifier
 import operator
 from typing import List
 import joblib
-from random import randint
+import numpy as np
 
 from preprocessing.document import Mention, Document
 from hcoref.training_config import TrainingConfig
-
-def getFeatureVector(doc: Document, mention: Mention, antecedent: Mention):
-    sentenceDistance = mention.stanzaSentence-antecedent.stanzaSentence
-    mentionHeadWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[mention.features.headWord-1].text
-    antecedentHeadWord = doc.stanzaAnnotation.sentences[antecedent.stanzaSentence].words[antecedent.features.headWord-1].text
-    if mentionHeadWord.lower() == antecedentHeadWord.lower():
-        identicalHeadWords = 1
-    else:
-        identicalHeadWords = 0
-    if mention.text.lower() == antecedent.text.lower():
-        exactStringMatch = 1
-    else:
-        exactStringMatch = 0
-    return [sentenceDistance, identicalHeadWords, exactStringMatch]
-
+from hcoref.feature_vector import getFeatureVector
 # Returns an ordered list of candidate antecedents for a mention,
 # in the order they should be considered in.
 def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
@@ -46,28 +33,35 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     return antecedents
 
 def trainSieves(docs: List[Document]):
-    properX = []
+    properMentionPairs = []
     properY = []
-    commonX = []
+    commonMentionPairs = []
     commonY = []
-    properCommonX = []
+    properCommonMentionPairs = []
     properCommonY = []
-    pronounX = []
+    pronounMentionPairs = []
     pronounY = []
     for doc in docs:
+        # Create a cluster for each mention, containing only that mention
+        doc.predictedMentions = doc.goldMentions
+        doc.predictedClusters = {}
+        for mention in doc.predictedMentions.values():
+            doc.predictedClusters[mention.id] = [mention.id]
+            mention.predictedCluster = mention.id
         for mention in doc.goldMentions.values():
+            mentionDistance = 0
             for antecedent in getCandidateAntecedents(doc, mention):
                 if mention.features.upos == 'PROPN' and antecedent.features.upos == 'PROPN':
-                    X = properX
+                    mentionPairs = properMentionPairs
                     y = properY
                 elif mention.features.upos == 'NOUN' and antecedent.features.upos == 'NOUN':
-                    X = commonX
+                    mentionPairs = commonMentionPairs
                     y = commonY
                 elif mention.features.upos == 'NOUN' and antecedent.features.upos == 'PROPN':
-                    X = properCommonX
+                    mentionPairs = properCommonMentionPairs
                     y = properCommonY
                 elif mention.features.upos == 'PRON':
-                    X = pronounX
+                    mentionPairs = pronounMentionPairs
                     y = pronounY
                 else:
                     continue
@@ -75,24 +69,45 @@ def trainSieves(docs: List[Document]):
                     y.append(1)
                 else:
                     y.append(0)
-                X.append(getFeatureVector(doc, mention, antecedent))
-
+                mentionPairs.append((doc, mention, antecedent, mentionDistance))
+                mentionDistance += 1
+    
+    np.set_printoptions(suppress=True)
     commonModel = RandomForestClassifier(max_depth=2, random_state=0)
+    commonX = []
+    for mp in commonMentionPairs:
+        commonX.append(getFeatureVector(*mp))
+        doc = mp[0]
     commonModel.fit(commonX, commonY)
     print(commonModel.feature_importances_)
     joblib.dump(commonModel, 'models/commonModel.joblib') 
-
+    doSievePasses(doc, [('commonSieve', commonModel)])
+    
     properModel = RandomForestClassifier(max_depth=2, random_state=0)
+    properX = []
+    for mp in properMentionPairs:
+        properX.append(getFeatureVector(*mp))
+        doc = mp[0]
     properModel.fit(properX, properY)
     print(properModel.feature_importances_)
     joblib.dump(properModel, 'models/properModel.joblib')
+    doSievePasses(doc, [('properSieve', properModel)])
 
     properCommonModel = RandomForestClassifier(max_depth=2, random_state=0)
+    properCommonX = []
+    for mp in properCommonMentionPairs:
+        properCommonX.append(getFeatureVector(*mp))
+        doc = mp[0]
     properCommonModel.fit(properCommonX, properCommonY)
     print(properCommonModel.feature_importances_)
     joblib.dump(properCommonModel, 'models/properCommonModel.joblib')
+    doSievePasses(doc, [('properCommonSieve', properCommonModel)])
 
     pronounModel = RandomForestClassifier(max_depth=2, random_state=0)
+    pronounX = []
+    for mp in pronounMentionPairs:
+        pronounX.append(getFeatureVector(*mp))
+        doc = mp[0]
     pronounModel.fit(pronounX, pronounY)
     print(pronounModel.feature_importances_)
     joblib.dump(pronounModel, 'models/pronounModel.joblib') 

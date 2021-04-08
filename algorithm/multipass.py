@@ -63,7 +63,7 @@ def strictHeadMatch(doc: Document, mention: Mention, candidateAntecedent: Mentio
     if mention.features.upos == 'PRON':
         return False
     headWords = []
-    for m in doc.predictedClusters[candidateAntecedent.cluster]:
+    for m in doc.predictedClusters[candidateAntecedent.predictedCluster]:
         headWords.append(doc.stanzaAnnotation.sentences[doc.predictedMentions[m].stanzaSentence].words[doc.predictedMentions[m].features.headWord-1].text)
     mentionHeadWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[mention.features.headWord-1].text
     if mentionHeadWord not in headWords:
@@ -118,12 +118,12 @@ def genetiveResolution(doc: Document, mention: Mention, ca: Mention) -> bool:
 
 # Moves all mentions in the mention cluster to the antecedent cluster.
 def link(doc: Document, mention: Mention, antecedent: Mention):
-    mentionCluster = mention.cluster
-    antecedentCluster = antecedent.cluster
+    mentionCluster = mention.predictedCluster
+    antecedentCluster = antecedent.predictedCluster
     if mentionCluster == antecedentCluster:
         return
     for m in doc.predictedClusters[mentionCluster]:
-        doc.predictedMentions[m].cluster = antecedentCluster
+        doc.predictedMentions[m].predictedCluster = antecedentCluster
     doc.predictedClusters[antecedentCluster] += doc.predictedClusters[mentionCluster]
     del doc.predictedClusters[mentionCluster]
 
@@ -184,7 +184,7 @@ def multiPass(doc: Document, config: Config):
     doc.predictedClusters = {}
     for mention in doc.predictedMentions.values():
          doc.predictedClusters[mention.id] = [mention.id]
-         mention.cluster = mention.id
+         mention.predictedCluster = mention.id
 
     doc.eligibleMentions = []
     for mention in doc.predictedMentions.values():

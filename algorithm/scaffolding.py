@@ -1,12 +1,12 @@
 from preprocessing.document import Document, Mention
 from preprocessing.config import Config
-from hcoref.hcoref import getFeatureVector
+from hcoref.feature_vector import getFeatureVector
 
 import operator
 from typing import List
 import joblib
 
-def useSieve(sieve, doc: Document, mention: Mention, antecedent: Mention) -> float:
+def useSieve(sieve, doc: Document, mention: Mention, antecedent: Mention, mentionDistance: int) -> float:
     name, sieveModel = sieve
     if name == 'properSieve':
         if mention.features.upos != 'PROPN' or antecedent.features.upos != 'PROPN':
@@ -20,18 +20,18 @@ def useSieve(sieve, doc: Document, mention: Mention, antecedent: Mention) -> flo
     if name == 'pronounSieve':
         if mention.features.upos != 'PRON' or antecedent.features.upos != 'PRON':
             return 0.0 
-    featureVector = getFeatureVector(doc, mention, antecedent)
+    featureVector = getFeatureVector(doc, mention, antecedent, mentionDistance)
     results = sieveModel.predict_proba([featureVector])
     return results[0][1]
 
 # Moves all mentions in the mention cluster to the antecedent cluster.
 def link(doc: Document, mention: Mention, antecedent: Mention):
-    mentionCluster = mention.cluster
-    antecedentCluster = antecedent.cluster
+    mentionCluster = mention.predictedCluster
+    antecedentCluster = antecedent.predictedCluster
     if mentionCluster == antecedentCluster:
         return
     for m in doc.predictedClusters[mentionCluster]:
-        doc.predictedMentions[m].cluster = antecedentCluster
+        doc.predictedMentions[m].predictedCluster = antecedentCluster
     doc.predictedClusters[antecedentCluster] += doc.predictedClusters[mentionCluster]
     del doc.predictedClusters[mentionCluster]
 
@@ -59,13 +59,15 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     return antecedents
 
 def doSievePasses(doc: Document, sieves):
-    threshold = 0.5
+    threshold = 0.3
     for sieve in sieves:
         for mention in doc.predictedMentions.values():
             bestValue = 0.0
             bestAntecedent = None
+            mentionDistance = 0
             for candidateAntecedent in getCandidateAntecedents(doc, mention):
-                val = useSieve(sieve, doc, mention, candidateAntecedent)
+                val = useSieve(sieve, doc, mention, candidateAntecedent, mentionDistance)
+                mentionDistance += 1
                 if val > bestValue:
                     bestValue = val
                     bestAntecedent = candidateAntecedent
@@ -87,7 +89,7 @@ def scaffoldingAlgorithm(doc: Document, config: Config):
     doc.predictedClusters = {}
     for mention in doc.predictedMentions.values():
          doc.predictedClusters[mention.id] = [mention.id]
-         mention.cluster = mention.id
+         mention.predictedCluster = mention.id
 
     doc.eligibleMentions = []
     for mention in doc.predictedMentions.values():
