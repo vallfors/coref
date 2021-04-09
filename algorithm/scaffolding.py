@@ -44,6 +44,8 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     x.sort(key=operator.attrgetter('startPos'))
     antecedents = []
     for idx, a in enumerate(x):
+        if mention.stanzaSentence - a.stanzaSentence >= 15:
+            continue
         if a.stanzaSentence >= mention.stanzaSentence:
             break
         antecedents.append(a)
@@ -59,7 +61,7 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     return antecedents
 
 def doSievePasses(doc: Document, sieves):
-    threshold = 0.3
+    threshold = 0.2
     for sieve in sieves:
         for mention in doc.predictedMentions.values():
             bestValue = 0.0
