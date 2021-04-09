@@ -45,6 +45,8 @@ def getFeatureVector(doc: Document, mention: Mention, antecedent: Mention, menti
     # Cluster features
     mentionCluster = doc.predictedClusters[mention.predictedCluster]
     antecedentCluster = doc.predictedClusters[antecedent.predictedCluster]
+
+    # Minimum cluster distance
     minimumClusterDistance = 10000
     for id in mentionCluster:
         m = doc.predictedMentions[id]
@@ -52,7 +54,42 @@ def getFeatureVector(doc: Document, mention: Mention, antecedent: Mention, menti
             a = doc.predictedMentions[antecedentId]
             minimumClusterDistance = min(minimumClusterDistance, abs(m.stanzaSentence-a.stanzaSentence))
     
+    # Cluster sizes
     antecedentClusterSize = len(antecedentCluster)
     mentionClusterSize = len(mentionCluster)
 
-    return [sentenceDistance, mentionDistance, minimumClusterDistance, antecedentClusterSize, mentionClusterSize, exactStringMatch, identicalHeadWords, identicalHeadWordsAndProper, numberMatch, genderMatch, naturalGenderMatch, animacyMatch, nerMatch]
+    # Any two mentions from each cluster have the same headword?
+    clusterHeadwordMatch = 0
+    clusterProperHeadwordMatch = 0
+    for id in mentionCluster:
+        m = doc.predictedMentions[id]
+        for antecedentId in antecedentCluster:
+            a = doc.predictedMentions[antecedentId]
+            mHeadword = doc.stanzaAnnotation.sentences[m.stanzaSentence].words[m.features.headWord-1].text
+            aHeadword = doc.stanzaAnnotation.sentences[a.stanzaSentence].words[a.features.headWord-1].text
+            if mHeadword.lower() == aHeadword.lower():
+                if m.features.upos == 'PRON' or a.features.upos == 'PRON':
+                    continue
+                clusterHeadwordMatch = 1
+                if m.features.upos == 'PROPN' and a.features.upos == 'PROPN':
+                    clusterProperHeadwordMatch = 1
+
+    # Any two mentions from each cluster are the genitive of the other? Lemmas match?
+    clusterGenitiveMatch = 0
+    clusterLemmaHeadMatch = 0
+    for id in mentionCluster:
+        m = doc.predictedMentions[id]
+        for antecedentId in antecedentCluster:
+            a = doc.predictedMentions[antecedentId]
+            if m.features.upos == 'PRON' or a.features.upos == 'PRON':
+                continue
+            if a.text.lower() +'s' == m.text.lower() or m.text.lower() +'s' == a.text.lower():
+                clusterGenitiveMatch = 1
+            if a.features.headWordLemma.lower() == m.features.headWordLemma.lower():
+                clusterLemmaHeadMatch = 1
+
+    return [sentenceDistance, mentionDistance, minimumClusterDistance,
+        antecedentClusterSize, mentionClusterSize, exactStringMatch, identicalHeadWords, 
+        identicalHeadWordsAndProper, numberMatch, genderMatch, naturalGenderMatch,
+        animacyMatch, nerMatch, clusterHeadwordMatch, clusterProperHeadwordMatch,
+        clusterGenitiveMatch, clusterLemmaHeadMatch]
