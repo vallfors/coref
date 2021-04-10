@@ -4,10 +4,12 @@ import operator
 from typing import List
 import joblib
 import numpy as np
+from gensim.models import KeyedVectors
 
 from preprocessing.document import Mention, Document
 from hcoref.training_config import TrainingConfig
 from hcoref.feature_vector import getFeatureVector
+
 # Returns an ordered list of candidate antecedents for a mention,
 # in the order they should be considered in.
 def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
@@ -32,7 +34,7 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     
     return antecedents
 
-def trainSieves(docs: List[Document]):
+def trainSieves(docs: List[Document], wordVectors):
     properMentionPairs = []
     properY = []
     commonMentionPairs = []
@@ -69,7 +71,7 @@ def trainSieves(docs: List[Document]):
                     y.append(1)
                 else:
                     y.append(0)
-                mentionPairs.append((doc, mention, antecedent, mentionDistance))
+                mentionPairs.append((doc, wordVectors, mention, antecedent, mentionDistance))
                 mentionDistance += 1
     
     np.set_printoptions(suppress=True)
@@ -81,7 +83,7 @@ def trainSieves(docs: List[Document]):
     commonModel.fit(commonX, commonY)
     print(commonModel.feature_importances_)
     joblib.dump(commonModel, 'models/commonModel.joblib') 
-    doSievePasses(doc, [('commonSieve', commonModel)])
+    doSievePasses(doc, wordVectors, [('commonSieve', commonModel)])
     
     properModel = RandomForestClassifier(max_depth=2, random_state=0)
     properX = []
@@ -91,7 +93,7 @@ def trainSieves(docs: List[Document]):
     properModel.fit(properX, properY)
     print(properModel.feature_importances_)
     joblib.dump(properModel, 'models/properModel.joblib')
-    doSievePasses(doc, [('properSieve', properModel)])
+    doSievePasses(doc, wordVectors, [('properSieve', properModel)])
 
     properCommonModel = RandomForestClassifier(max_depth=2, random_state=0)
     properCommonX = []
@@ -101,7 +103,7 @@ def trainSieves(docs: List[Document]):
     properCommonModel.fit(properCommonX, properCommonY)
     print(properCommonModel.feature_importances_)
     joblib.dump(properCommonModel, 'models/properCommonModel.joblib')
-    doSievePasses(doc, [('properCommonSieve', properCommonModel)])
+    doSievePasses(doc, wordVectors, [('properCommonSieve', properCommonModel)])
 
     pronounModel = RandomForestClassifier(max_depth=2, random_state=0)
     pronounX = []
@@ -113,4 +115,5 @@ def trainSieves(docs: List[Document]):
     joblib.dump(pronounModel, 'models/pronounModel.joblib') 
 
 def trainAll(docs: List[Document], config: TrainingConfig):
-    trainSieves(docs)
+    wordVectors = KeyedVectors.load_word2vec_format("../model.bin", binary=True)
+    trainSieves(docs, wordVectors)

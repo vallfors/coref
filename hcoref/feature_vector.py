@@ -1,6 +1,6 @@
 from preprocessing.document import Mention, Document
 
-def getFeatureVector(doc: Document, mention: Mention, antecedent: Mention, mentionDistance: int):
+def getFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
     sentenceDistance = mention.stanzaSentence-antecedent.stanzaSentence
     mentionHeadWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[mention.features.headWord-1].text
     antecedentHeadWord = doc.stanzaAnnotation.sentences[antecedent.stanzaSentence].words[antecedent.features.headWord-1].text
@@ -88,8 +88,15 @@ def getFeatureVector(doc: Document, mention: Mention, antecedent: Mention, menti
             if a.features.headWordLemma.lower() == m.features.headWordLemma.lower():
                 clusterLemmaHeadMatch = 1
 
+    mHeadword = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[mention.features.headWord-1].text
+    aHeadword = doc.stanzaAnnotation.sentences[antecedent.stanzaSentence].words[antecedent.features.headWord-1].text
+    if mHeadword in wordVectors.key_to_index and aHeadword in wordVectors.key_to_index:
+        wordvecHeadwordDistance = wordVectors.distance(mHeadword.lower(), aHeadword.lower())
+    else:
+        wordvecHeadwordDistance = -1
+
     return [sentenceDistance, mentionDistance, minimumClusterDistance,
         antecedentClusterSize, mentionClusterSize, exactStringMatch, identicalHeadWords, 
         identicalHeadWordsAndProper, numberMatch, genderMatch, naturalGenderMatch,
         animacyMatch, nerMatch, clusterHeadwordMatch, clusterProperHeadwordMatch,
-        clusterGenitiveMatch, clusterLemmaHeadMatch]
+        clusterGenitiveMatch, clusterLemmaHeadMatch, wordvecHeadwordDistance]

@@ -5,8 +5,9 @@ from hcoref.feature_vector import getFeatureVector
 import operator
 from typing import List
 import joblib
+from gensim.models import KeyedVectors
 
-def useSieve(sieve, doc: Document, mention: Mention, antecedent: Mention, mentionDistance: int) -> float:
+def useSieve(sieve, doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int) -> float:
     name, sieveModel = sieve
     if name == 'properSieve':
         if mention.features.upos != 'PROPN' or antecedent.features.upos != 'PROPN':
@@ -20,7 +21,7 @@ def useSieve(sieve, doc: Document, mention: Mention, antecedent: Mention, mentio
     if name == 'pronounSieve':
         if mention.features.upos != 'PRON' or antecedent.features.upos != 'PRON':
             return 0.0 
-    featureVector = getFeatureVector(doc, mention, antecedent, mentionDistance)
+    featureVector = getFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
     results = sieveModel.predict_proba([featureVector])
     return results[0][1]
 
@@ -60,7 +61,7 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     
     return antecedents
 
-def doSievePasses(doc: Document, sieves):
+def doSievePasses(doc: Document, wordVectors, sieves):
     threshold = 0.2
     for sieve in sieves:
         for mention in doc.predictedMentions.values():
@@ -68,7 +69,7 @@ def doSievePasses(doc: Document, sieves):
             bestAntecedent = None
             mentionDistance = 0
             for candidateAntecedent in getCandidateAntecedents(doc, mention):
-                val = useSieve(sieve, doc, mention, candidateAntecedent, mentionDistance)
+                val = useSieve(sieve, doc, wordVectors, mention, candidateAntecedent, mentionDistance)
                 mentionDistance += 1
                 if val > bestValue:
                     bestValue = val
@@ -98,4 +99,5 @@ def scaffoldingAlgorithm(doc: Document, config: Config):
         doc.eligibleMentions.append(mention)
     # Probably should have some different ordering
     doc.eligibleMentions.sort(key=operator.attrgetter('startPos'))
-    doSievePasses(doc, sieves)
+    wordVectors = KeyedVectors.load_word2vec_format("../model.bin", binary=True)
+    doSievePasses(doc, wordVectors, sieves)
