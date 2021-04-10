@@ -34,6 +34,17 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     
     return antecedents
 
+def trainSieveAndUse(wordVectors, mentionPairs, Y, name):
+    model = RandomForestClassifier(max_depth=2, random_state=0)
+    X = []
+    for mp in mentionPairs:
+        X.append(getFeatureVector(*mp))
+        doc = mp[0]
+    model.fit(X, Y)
+    print(model.feature_importances_)
+    joblib.dump(model, f'models/{name}Model.joblib')
+    doSievePasses(doc, wordVectors, [('commonSieve', model)])
+
 def trainSieves(docs: List[Document], wordVectors):
     properMentionPairs = []
     properY = []
@@ -75,45 +86,11 @@ def trainSieves(docs: List[Document], wordVectors):
                 mentionDistance += 1
     
     np.set_printoptions(suppress=True)
-    commonModel = RandomForestClassifier(max_depth=2, random_state=0)
-    commonX = []
-    for mp in commonMentionPairs:
-        commonX.append(getFeatureVector(*mp))
-        doc = mp[0]
-    commonModel.fit(commonX, commonY)
-    print(commonModel.feature_importances_)
-    joblib.dump(commonModel, 'models/commonModel.joblib') 
-    doSievePasses(doc, wordVectors, [('commonSieve', commonModel)])
+    trainSieveAndUse(wordVectors, commonMentionPairs, commonY, 'common')
+    trainSieveAndUse(wordVectors, properMentionPairs, properY, 'proper')
+    trainSieveAndUse(wordVectors, properCommonMentionPairs, properCommonY, 'properCommon')
+    trainSieveAndUse(wordVectors, pronounMentionPairs, pronounY, 'pronoun')
     
-    properModel = RandomForestClassifier(max_depth=2, random_state=0)
-    properX = []
-    for mp in properMentionPairs:
-        properX.append(getFeatureVector(*mp))
-        doc = mp[0]
-    properModel.fit(properX, properY)
-    print(properModel.feature_importances_)
-    joblib.dump(properModel, 'models/properModel.joblib')
-    doSievePasses(doc, wordVectors, [('properSieve', properModel)])
-
-    properCommonModel = RandomForestClassifier(max_depth=2, random_state=0)
-    properCommonX = []
-    for mp in properCommonMentionPairs:
-        properCommonX.append(getFeatureVector(*mp))
-        doc = mp[0]
-    properCommonModel.fit(properCommonX, properCommonY)
-    print(properCommonModel.feature_importances_)
-    joblib.dump(properCommonModel, 'models/properCommonModel.joblib')
-    doSievePasses(doc, wordVectors, [('properCommonSieve', properCommonModel)])
-
-    pronounModel = RandomForestClassifier(max_depth=2, random_state=0)
-    pronounX = []
-    for mp in pronounMentionPairs:
-        pronounX.append(getFeatureVector(*mp))
-        doc = mp[0]
-    pronounModel.fit(pronounX, pronounY)
-    print(pronounModel.feature_importances_)
-    joblib.dump(pronounModel, 'models/pronounModel.joblib') 
-
 def trainAll(docs: List[Document], config: TrainingConfig):
     wordVectors = KeyedVectors.load_word2vec_format("../model.bin", binary=True)
     trainSieves(docs, wordVectors)
