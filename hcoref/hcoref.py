@@ -34,7 +34,7 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     
     return antecedents
 
-def trainSieveAndUse(config: Config, wordVectors, mentionPairs, Y, name):
+def trainSieveAndUse(docs: List[Document], config: Config, wordVectors, mentionPairs, Y, name):
     if config.maxDepth == -1: # No max depth
         model = RandomForestClassifier(random_state=0)
     else:
@@ -42,14 +42,14 @@ def trainSieveAndUse(config: Config, wordVectors, mentionPairs, Y, name):
     X = []
     for mp in mentionPairs:
         X.append(getFeatureVector(*mp))
-        doc = mp[0]
     model.fit(X, Y)
     print(model.feature_importances_)
     joblib.dump(model, f'models/{name}Model.joblib')
     for s in config.scaffoldingSieves:
         if s['name'] == name:
             sieve = s
-    doSievePasses(doc, wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model)])
+    for doc in docs:
+        doSievePasses(doc, wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model)])
 
 def trainSieves(config: Config, docs: List[Document], wordVectors):
     properMentionPairs = []
@@ -92,10 +92,10 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
                 mentionDistance += 1
     
     np.set_printoptions(suppress=True)
-    trainSieveAndUse(config, wordVectors, properMentionPairs, properY, 'proper')
-    trainSieveAndUse(config, wordVectors, commonMentionPairs, commonY, 'common')
-    trainSieveAndUse(config, wordVectors, properCommonMentionPairs, properCommonY, 'properCommon')
-    trainSieveAndUse(config, wordVectors, pronounMentionPairs, pronounY, 'pronoun')
+    trainSieveAndUse(docs, config, wordVectors, properMentionPairs, properY, 'proper')
+    trainSieveAndUse(docs, config, wordVectors, commonMentionPairs, commonY, 'common')
+    trainSieveAndUse(docs, config, wordVectors, properCommonMentionPairs, properCommonY, 'properCommon')
+    trainSieveAndUse(docs, config, wordVectors, pronounMentionPairs, pronounY, 'pronoun')
 
 def trainAll(docs: List[Document], config: Config):
     wordVectors = KeyedVectors.load_word2vec_format(config.wordVectorFile, binary=True)
