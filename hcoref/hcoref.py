@@ -16,7 +16,7 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     x = list(doc.goldMentions.values())
     x.sort(key=operator.attrgetter('startPos'))
     antecedents = []
-    sentenceThreshold = 30
+    sentenceThreshold = 15
     for idx, a in enumerate(x):
         if a.stanzaSentence >= mention.stanzaSentence:
             break
@@ -35,7 +35,10 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     return antecedents
 
 def trainSieveAndUse(config: Config, wordVectors, mentionPairs, Y, name):
-    model = RandomForestClassifier(max_depth=2, random_state=0)
+    if config.maxDepth == -1: # No max depth
+        model = RandomForestClassifier(random_state=0)
+    else:
+        model = RandomForestClassifier(max_depth=config.maxDepth, random_state=0)
     X = []
     for mp in mentionPairs:
         X.append(getFeatureVector(*mp))
@@ -95,5 +98,5 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
     trainSieveAndUse(config, wordVectors, pronounMentionPairs, pronounY, 'pronoun')
 
 def trainAll(docs: List[Document], config: Config):
-    wordVectors = KeyedVectors.load_word2vec_format("../model.bin", binary=True)
+    wordVectors = KeyedVectors.load_word2vec_format(config.wordVectorFile, binary=True)
     trainSieves(config, docs, wordVectors)

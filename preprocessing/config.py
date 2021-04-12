@@ -9,12 +9,14 @@ class Config:
     algorithm: str
     inputFile: str
     trainingInputFile: str
+    wordVectorFile: str
     useAllDocs: bool
     docId: int
     multipassSieves: List[str]
     writeForScoring: bool
     debugMentionDetection: bool
     compareClusters: bool
+    maxDepth: int
 
     def __init__(self, filename: str):
         with open(filename) as f:
@@ -29,8 +31,10 @@ class Config:
             self.multipassSieves = configDict['multipassSieves']
         if configDict['algorithm'] == 'hcoref':
             self.scaffoldingSieves = configDict['scaffoldingSieves']
+            self.wordVectorFile = configDict['wordVectorFile']
         self.writeForScoring = configDict['writeForScoring']
         self.debugMentionDetection = configDict['debugMentionDetection']
         self.compareClusters = configDict['compareClusters']
         if 'trainingInputFile' in configDict:
             self.trainingInputFile = configDict['trainingInputFile']
+            self.maxDepth = configDict['maxDepth']

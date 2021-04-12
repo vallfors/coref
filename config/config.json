@@ -25,6 +25,8 @@
     ],
     "inputFile": "./data/textinator/devfromtrain.json",
     "trainingInputFile": "./data/textinator/train.json",
+    "wordVectorFile": "../model.bin",
+    "maxDepth": 2,
     "useAllDocs": true,
     "docId": 0,
     "compareClusters": false,
