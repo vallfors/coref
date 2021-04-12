@@ -1,4 +1,3 @@
-from algorithm.scaffolding import doSievePasses
 from sklearn.ensemble import RandomForestClassifier
 import operator
 from typing import List
@@ -7,8 +6,9 @@ import numpy as np
 from gensim.models import KeyedVectors
 
 from preprocessing.document import Mention, Document
-from hcoref.training_config import TrainingConfig
+from preprocessing.config import Config
 from hcoref.feature_vector import getFeatureVector
+from algorithm.scaffolding import doSievePasses, Sieve
 
 # Returns an ordered list of candidate antecedents for a mention,
 # in the order they should be considered in.
@@ -34,7 +34,7 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     
     return antecedents
 
-def trainSieveAndUse(wordVectors, mentionPairs, Y, name):
+def trainSieveAndUse(config: Config, wordVectors, mentionPairs, Y, name):
     model = RandomForestClassifier(max_depth=2, random_state=0)
     X = []
     for mp in mentionPairs:
@@ -43,9 +43,12 @@ def trainSieveAndUse(wordVectors, mentionPairs, Y, name):
     model.fit(X, Y)
     print(model.feature_importances_)
     joblib.dump(model, f'models/{name}Model.joblib')
-    doSievePasses(doc, wordVectors, [('commonSieve', model)])
+    for s in config.scaffoldingSieves:
+        if s['name'] == name:
+            sieve = s
+    doSievePasses(doc, wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model)])
 
-def trainSieves(docs: List[Document], wordVectors):
+def trainSieves(config: Config, docs: List[Document], wordVectors):
     properMentionPairs = []
     properY = []
     commonMentionPairs = []
@@ -86,11 +89,11 @@ def trainSieves(docs: List[Document], wordVectors):
                 mentionDistance += 1
     
     np.set_printoptions(suppress=True)
-    trainSieveAndUse(wordVectors, commonMentionPairs, commonY, 'common')
-    trainSieveAndUse(wordVectors, properMentionPairs, properY, 'proper')
-    trainSieveAndUse(wordVectors, properCommonMentionPairs, properCommonY, 'properCommon')
-    trainSieveAndUse(wordVectors, pronounMentionPairs, pronounY, 'pronoun')
-    
-def trainAll(docs: List[Document], config: TrainingConfig):
+    trainSieveAndUse(config, wordVectors, properMentionPairs, properY, 'proper')
+    trainSieveAndUse(config, wordVectors, commonMentionPairs, commonY, 'common')
+    trainSieveAndUse(config, wordVectors, properCommonMentionPairs, properCommonY, 'properCommon')
+    trainSieveAndUse(config, wordVectors, pronounMentionPairs, pronounY, 'pronoun')
+
+def trainAll(docs: List[Document], config: Config):
     wordVectors = KeyedVectors.load_word2vec_format("../model.bin", binary=True)
-    trainSieves(docs, wordVectors)
+    trainSieves(config, docs, wordVectors)

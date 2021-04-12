@@ -8,6 +8,7 @@ class Config:
     useGoldMentions: bool
     algorithm: str
     inputFile: str
+    trainingInputFile: str
     useAllDocs: bool
     docId: int
     multipassSieves: List[str]
@@ -31,3 +32,5 @@ class Config:
         self.writeForScoring = configDict['writeForScoring']
         self.debugMentionDetection = configDict['debugMentionDetection']
         self.compareClusters = configDict['compareClusters']
+        if 'trainingInputFile' in configDict:
+            self.trainingInputFile = configDict['trainingInputFile']

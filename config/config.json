@@ -1,8 +1,30 @@
 {
     "useGoldMentions": true,
     "algorithm": "hcoref",
-    "scaffoldingSieves": ["properSieve", "commonSieve", "properCommonSieve", "pronounSieve"],
-    "inputFile": "./data/textinator/example.json",
+    "scaffoldingSieves": [
+        {
+            "name": "proper",
+            "sentenceLimit": 15,
+            "threshold": 0.2
+        },
+        {
+            "name": "common",
+            "sentenceLimit": 15,
+            "threshold": 0.2
+        },
+        {
+            "name": "properCommon",
+            "sentenceLimit": 15,
+            "threshold": 0.2
+        },
+        {
+            "name": "pronoun",
+            "sentenceLimit": 15,
+            "threshold": 0.2
+        }
+    ],
+    "inputFile": "./data/textinator/devfromtrain.json",
+    "trainingInputFile": "./data/textinator/train.json",
     "useAllDocs": true,
     "docId": 0,
     "compareClusters": false,

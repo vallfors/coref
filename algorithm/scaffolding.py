@@ -7,22 +7,33 @@ from typing import List
 import joblib
 from gensim.models import KeyedVectors
 
+class Sieve:
+    name: str
+    sentenceLimit: int
+    threshold: float
+    model = None
+
+    def __init__(self, name, sentenceLimit, threshold, model):
+        self.name = name
+        self.sentenceLimit = sentenceLimit
+        self.threshold = threshold
+        self.model = model
+
 def useSieve(sieve, doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int) -> float:
-    name, sieveModel = sieve
-    if name == 'properSieve':
+    if sieve.name == 'proper':
         if mention.features.upos != 'PROPN' or antecedent.features.upos != 'PROPN':
             return 0.0
-    if name == 'commonSieve':
+    if sieve.name == 'common':
         if mention.features.upos != 'NOUN' or antecedent.features.upos != 'NOUN':
             return 0.0
-    if name == 'properCommonSieve':
+    if sieve.name == 'properCommon':
         if mention.features.upos != 'NOUN' or antecedent.features.upos != 'PROPN':
             return 0.0 
-    if name == 'pronounSieve':
+    if sieve.name == 'pronoun':
         if mention.features.upos != 'PRON' or antecedent.features.upos != 'PRON':
             return 0.0 
     featureVector = getFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
-    results = sieveModel.predict_proba([featureVector])
+    results = sieve.model.predict_proba([featureVector])
     return results[0][1]
 
 # Moves all mentions in the mention cluster to the antecedent cluster.
@@ -40,12 +51,12 @@ def link(doc: Document, mention: Mention, antecedent: Mention):
 # Returns an ordered list of candidate antecedents for a mention,
 # in the order they should be considered in.
 # TODO: Should use the tree structure for the previous two sentences
-def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
+def getCandidateAntecedents(doc: Document, mention: Mention, sentenceLimit: int) -> List[Mention]:
     x = list(doc.predictedMentions.values())
     x.sort(key=operator.attrgetter('startPos'))
     antecedents = []
     for idx, a in enumerate(x):
-        if mention.stanzaSentence - a.stanzaSentence >= 15:
+        if mention.stanzaSentence - a.stanzaSentence >= sentenceLimit:
             continue
         if a.stanzaSentence >= mention.stanzaSentence:
             break
@@ -61,33 +72,27 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     
     return antecedents
 
-def doSievePasses(doc: Document, wordVectors, sieves):
-    threshold = 0.2
+def doSievePasses(doc: Document, wordVectors, sieves: List[Sieve]):
     for sieve in sieves:
         for mention in doc.predictedMentions.values():
             bestValue = 0.0
             bestAntecedent = None
             mentionDistance = 0
-            for candidateAntecedent in getCandidateAntecedents(doc, mention):
+            for candidateAntecedent in getCandidateAntecedents(doc, mention, sieve.sentenceLimit):
                 val = useSieve(sieve, doc, wordVectors, mention, candidateAntecedent, mentionDistance)
                 mentionDistance += 1
                 if val > bestValue:
                     bestValue = val
                     bestAntecedent = candidateAntecedent
-            if bestValue > threshold and bestAntecedent != None:
+            if bestValue > sieve.threshold and bestAntecedent != None:
                 link(doc, mention, bestAntecedent)
 
-def scaffoldingAlgorithm(doc: Document, config: Config):
-    properModel = joblib.load('models/properModel.joblib')
-    commonModel = joblib.load('models/commonModel.joblib') 
-    properCommonModel = joblib.load('models/properCommonModel.joblib') 
-    pronounModel = joblib.load('models/pronounModel.joblib') 
-    sieveMapping = {'properSieve': properModel, 'commonSieve': commonModel, 'properCommonSieve': properCommonModel, 'pronounSieve': pronounModel}
+def scaffoldingAlgorithm(doc: Document, config: Config): 
     sieves = []
     for s in config.scaffoldingSieves:
-        if not s in sieveMapping:
-            raise Exception(f'Invalid multipass sieve name: {s}')
-        sieves.append((s, sieveMapping[s]))
+        name = s['name']
+        model = joblib.load(f'models/{name}Model.joblib')
+        sieves.append(Sieve(s['name'], s['sentenceLimit'], s['threshold'], model))
     # Create a cluster for each mention, containing only that mention
     doc.predictedClusters = {}
     for mention in doc.predictedMentions.values():

@@ -2,7 +2,7 @@
     "useGoldMentions": true,
     "algorithm": "multipass",
     "multipassSieves": ["exactMatch", "genetiveResolution", "pronounResolution"],
-    "inputFile": "./data/textinator/example.json",
+    "inputFile": "./data/textinator/devfromtrain.json",
     "useAllDocs": true,
     "compareClusters": false,
     "writeForScoring": true,

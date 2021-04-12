@@ -7,18 +7,17 @@ from preprocessing.config import Config
 from preprocessing.stanza_processor import StanzaAnnotator, addStanzaLinksToGoldMentions
 from algorithm.add_features import addFeatures
 from hcoref.hcoref import trainAll
-from hcoref.training_config import TrainingConfig
 
 def main():
     parser = ArgumentParser()
     parser.add_argument('configFile', help='Path to the training config file')
 
     args = parser.parse_args()
-    trainingConfig = TrainingConfig(args.configFile)
+    config = Config(args.configFile)
 
     stanzaAnnotator = StanzaAnnotator()
     nerPipeline = pipeline('ner', model='KB/bert-base-swedish-cased-ner', tokenizer='KB/bert-base-swedish-cased-ner')
-    docs = documentsFromTextinatorFile(trainingConfig.inputFile)
+    docs = documentsFromTextinatorFile(config.trainingInputFile)
 
     for doc in docs:
         stanzaAnnotator.annotateDocument(doc)
@@ -26,7 +25,7 @@ def main():
         addStanzaLinksToGoldMentions(doc)
         addFeatures(doc, nerPipeline)
     
-    trainAll(docs, trainingConfig)
+    trainAll(docs, config)
         
 if __name__ == "__main__":
     main()
