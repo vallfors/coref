@@ -1,3 +1,4 @@
+from evaluation.mention_matching import matchMentions
 from sklearn.ensemble import RandomForestClassifier
 from argparse import ArgumentParser
 from transformers import pipeline
@@ -7,6 +8,7 @@ from preprocessing.config import Config
 from preprocessing.stanza_processor import StanzaAnnotator, addStanzaLinksToGoldMentions
 from algorithm.add_features import addFeatures
 from hcoref.hcoref import trainAll
+from algorithm.mention_detection import mentionDetection
 
 def main():
     parser = ArgumentParser()
@@ -21,8 +23,17 @@ def main():
 
     for doc in docs:
         stanzaAnnotator.annotateDocument(doc)
-        doc.predictedMentions = doc.goldMentions
+        if not config.useGoldMentions:
+            mentionDetection(doc)
+        else:
+            doc.predictedMentions = doc.goldMentions
         addStanzaLinksToGoldMentions(doc)
+        matchMentions(doc, config)
+        for mention in doc.predictedMentions.values():
+            if mention.id in doc.predictedToGold:
+                mention.cluster = doc.goldMentions[doc.predictedToGold[mention.id]].cluster
+            else:
+                mention.cluster = -1 # Mention belongs to no gold cluster, since it corresponds to no gold mention.
         addFeatures(doc, nerPipeline)
     
     trainAll(docs, config)

@@ -13,7 +13,7 @@ from algorithm.scaffolding import doSievePasses, Sieve
 # Returns an ordered list of candidate antecedents for a mention,
 # in the order they should be considered in.
 def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
-    x = list(doc.goldMentions.values())
+    x = list(doc.predictedMentions.values())
     x.sort(key=operator.attrgetter('startPos'))
     antecedents = []
     sentenceThreshold = 15
@@ -62,12 +62,11 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
     pronounY = []
     for doc in docs:
         # Create a cluster for each mention, containing only that mention
-        doc.predictedMentions = doc.goldMentions
         doc.predictedClusters = {}
         for mention in doc.predictedMentions.values():
             doc.predictedClusters[mention.id] = [mention.id]
             mention.predictedCluster = mention.id
-        for mention in doc.goldMentions.values():
+        for mention in doc.predictedMentions.values():
             mentionDistance = 0
             for antecedent in getCandidateAntecedents(doc, mention):
                 if mention.features.upos == 'PROPN' and antecedent.features.upos == 'PROPN':
@@ -84,7 +83,7 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
                     y = pronounY
                 else:
                     continue
-                if mention.cluster == antecedent.cluster:
+                if mention.cluster == antecedent.cluster and mention.cluster != -1:
                     y.append(1)
                 else:
                     y.append(0)
