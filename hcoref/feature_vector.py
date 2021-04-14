@@ -40,6 +40,13 @@ def getFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: M
         if mention.features.nerTag != antecedent.features.nerTag:
             nerMatch = 0
 
+    subjectObjectRelation = False
+    if mention.features.headWordHead == antecedent.features.headWordHead:
+        if mention.features.isObject and antecedent.features.isSubject:
+            subjectObjectRelation = True
+        if mention.features.isSubject and antecedent.features.isObject:
+            subjectObjectRelation = True
+
     # Cluster features
     mentionCluster = doc.predictedClusters[mention.predictedCluster]
     antecedentCluster = doc.predictedClusters[antecedent.predictedCluster]

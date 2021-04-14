@@ -86,13 +86,16 @@ def addFeaturesToMentionDict(doc: Document, nerPipeline, mentions: Dict[int, Men
         mention.features.upos = headWord.upos        
         mention.features.headWordDeprel = headWord.deprel
         mention.features.headWordLemma = headWord.lemma
+        mention.features.headWordHead = headWord.head
+
+        mention.features.isSubject = 'nsubj' in headWord.deprel
+        mention.features.isObject = 'obj' in headWord.deprel # Includes indirect objects, iobj
         
         mention.features.number = extractNumber(headWord, mention.features.nerTag)
         mention.features.animacy = extractAnimacy(headWord, mention.features.nerTag)
         mention.features.naturalGender = extractNaturalGender(headWord)
         mention.features.gender = extractGender(headWord)
         mention.features.definite = extractDefiniteness(headWord)
-
 
 def addFeatures(doc: Document, nerPipeline):
     addFeaturesToMentionDict(doc, nerPipeline, doc.goldMentions)

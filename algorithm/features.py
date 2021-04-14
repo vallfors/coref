@@ -12,6 +12,9 @@ class Features:
     nerTag: str
     animacy: str # ANIMATE, INANIMATE, UNKNOWN
     naturalGender: str # MALE, FEMALE, UNKNOWN
+    isSubject: bool 
+    isObject: bool # Direct or indirect object
+    headWordHead: int # Id of the head of the headword
 
 class ClusterFeatures:
     nonStopWords: List[str]
