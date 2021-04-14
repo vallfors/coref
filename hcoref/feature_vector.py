@@ -2,9 +2,7 @@ from preprocessing.document import Mention, Document
 
 def getFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
     sentenceDistance = mention.stanzaSentence-antecedent.stanzaSentence
-    mentionHeadWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[mention.features.headWord-1].text
-    antecedentHeadWord = doc.stanzaAnnotation.sentences[antecedent.stanzaSentence].words[antecedent.features.headWord-1].text
-    if mentionHeadWord.lower() == antecedentHeadWord.lower():
+    if mention.features.headWord.lower() == antecedent.features.headWord.lower():
         identicalHeadWords = 1
     else:
         identicalHeadWords = 0
@@ -65,9 +63,7 @@ def getFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: M
         m = doc.predictedMentions[id]
         for antecedentId in antecedentCluster:
             a = doc.predictedMentions[antecedentId]
-            mHeadword = doc.stanzaAnnotation.sentences[m.stanzaSentence].words[m.features.headWord-1].text
-            aHeadword = doc.stanzaAnnotation.sentences[a.stanzaSentence].words[a.features.headWord-1].text
-            if mHeadword.lower() == aHeadword.lower():
+            if m.features.headWord.lower() == a.features.headWord.lower():
                 if m.features.upos == 'PRON' or a.features.upos == 'PRON':
                     continue
                 clusterHeadwordMatch = 1
@@ -88,10 +84,8 @@ def getFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: M
             if a.features.headWordLemma.lower() == m.features.headWordLemma.lower():
                 clusterLemmaHeadMatch = 1
 
-    mHeadword = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[mention.features.headWord-1].text
-    aHeadword = doc.stanzaAnnotation.sentences[antecedent.stanzaSentence].words[antecedent.features.headWord-1].text
-    if mHeadword in wordVectors.key_to_index and aHeadword in wordVectors.key_to_index:
-        wordvecHeadwordDistance = wordVectors.distance(mHeadword.lower(), aHeadword.lower())
+    if mention.features.headWord in wordVectors.key_to_index and antecedent.features.headWord in wordVectors.key_to_index:
+        wordvecHeadwordDistance = wordVectors.distance(mention.features.headWord.lower(), antecedent.features.headWord.lower())
     else:
         wordvecHeadwordDistance = -1
 

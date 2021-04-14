@@ -15,11 +15,11 @@ def lemmaHeadWordMatch(doc: Document, mention: Mention, ca: Mention) -> bool:
         return False
     for id in mention.stanzaIds:
         word = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[id-1]
-        if word.id != mention.features.headWord and word.upos in ['NOUN', 'PROPN', 'ADJ']:
+        if word.id != mention.features.headWordId and word.upos in ['NOUN', 'PROPN', 'ADJ']:
             return False
     for id in ca.stanzaIds:
         word = doc.stanzaAnnotation.sentences[ca.stanzaSentence].words[id-1]
-        if word.id != ca.features.headWord and word.upos in ['NOUN', 'PROPN', 'ADJ']:
+        if word.id != ca.features.headWordId and word.upos in ['NOUN', 'PROPN', 'ADJ']:
             return False
     if mention.features.number != 'UNKNOWN' and ca.features.number != 'UNKNOWN':
         if mention.features.number != ca.features.number:
@@ -35,9 +35,7 @@ def headWordMatch(doc: Document, mention: Mention, candidateAntecedent: Mention)
         return False
     if mention.features.upos == 'PRON':
         return False
-    antecedentHeadWord = doc.stanzaAnnotation.sentences[candidateAntecedent.stanzaSentence].words[candidateAntecedent.features.headWord-1].text
-    mentionHeadWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[mention.features.headWord-1].text
-    return antecedentHeadWord.lower() == mentionHeadWord.lower() 
+    return candidateAntecedent.features.headWord.lower() == mention.features.headWord.lower() 
 
 # Pass 3 from Lee et al 2013
 # Returns true if the strings are identical up to and including their headwords.
@@ -48,13 +46,13 @@ def relaxedStringMatch(doc: Document, mention: Mention, candidateAntecedent: Men
     for id in mention.stanzaIds:
         word = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[id-1]
         mentionTextUntilHead += word.text + ' '
-        if id == mention.features.headWord:
+        if id == mention.features.headWordId:
             break
     antecedentTextUntilHead = ''
     for id in candidateAntecedent.stanzaIds:
         word = doc.stanzaAnnotation.sentences[candidateAntecedent.stanzaSentence].words[id-1]
         antecedentTextUntilHead += word.text + ' '
-        if id == candidateAntecedent.features.headWord:
+        if id == candidateAntecedent.features.headWordId:
             break        
     return mentionTextUntilHead.lower() == antecedentTextUntilHead.lower()
 
@@ -64,9 +62,8 @@ def strictHeadMatch(doc: Document, mention: Mention, candidateAntecedent: Mentio
         return False
     headWords = []
     for m in doc.predictedClusters[candidateAntecedent.predictedCluster]:
-        headWords.append(doc.stanzaAnnotation.sentences[doc.predictedMentions[m].stanzaSentence].words[doc.predictedMentions[m].features.headWord-1].text)
-    mentionHeadWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[mention.features.headWord-1].text
-    if mentionHeadWord not in headWords:
+        headWords.append(doc.predictedMentions[m].features.headWord)
+    if mention.features.headWord not in headWords:
         return False
 
     return True

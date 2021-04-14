@@ -73,7 +73,8 @@ def addFeaturesToMentionDict(doc: Document, nerPipeline, mentions: Dict[int, Men
             word = doc.stanzaAnnotation.sentences[sentence].words[id-1]
             if word.head not in ids:
                 headWord = word
-        mention.features.headWord = headWord.id
+        mention.features.headWordId = headWord.id
+        mention.features.headWord = headWord.text
 
         # Named entity recognition
         nerResult = nerPipeline(mention.text)
