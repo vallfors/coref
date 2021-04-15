@@ -5,22 +5,22 @@
         {
             "name": "proper",
             "sentenceLimit": 15,
-            "threshold": 0.2
+            "threshold": 0.15
         },
         {
             "name": "common",
             "sentenceLimit": 15,
-            "threshold": 0.2
+            "threshold": 0.15
         },
         {
             "name": "properCommon",
             "sentenceLimit": 15,
-            "threshold": 0.2
+            "threshold": 0.15
         },
         {
             "name": "pronoun",
             "sentenceLimit": 15,
-            "threshold": 0.2
+            "threshold": 0.15
         }
     ],
     "inputFile": "./data/textinator/devfromtrain.json",
@@ -31,6 +31,9 @@
     "docId": 0,
     "compareClusters": false,
     "writeForScoring": true,
-    "debugMentionDetection": false
+    "debugMentionDetection": false,
+    "debugFeatureSelection": true,
+    "minimalMutualInformation": 0.0001,
+    "allowedFeatureRarity": 30
 
 }

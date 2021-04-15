@@ -1,4 +1,7 @@
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import mutual_info_classif
 import operator
 from typing import List
 import joblib
@@ -7,7 +10,7 @@ from gensim.models import KeyedVectors
 
 from preprocessing.document import Mention, Document
 from preprocessing.config import Config
-from hcoref.feature_vector import getFeatureVector
+from hcoref.feature_vector import getFeatureVector, getStringFeatureVector
 from algorithm.scaffolding import doSievePasses, Sieve
 
 # Returns an ordered list of candidate antecedents for a mention,
@@ -40,16 +43,70 @@ def trainSieveAndUse(docs: List[Document], config: Config, wordVectors, mentionP
     else:
         model = RandomForestClassifier(max_depth=config.maxDepth, random_state=0)
     X = []
+    stringFeatureVectors = []
     for mp in mentionPairs:
         X.append(getFeatureVector(*mp))
+        stringFeatureVectors.append(getStringFeatureVector(*mp))
+    
+    encoder = OneHotEncoder(handle_unknown='ignore')
+    encoder.fit(stringFeatureVectors)
+    stringFeatures = encoder.transform(stringFeatureVectors).toarray()
+    X = np.concatenate((X, stringFeatures), 1)
+    
+    manualFeatures = ['sentenceDistance', 'mentionDistance', 'minimumClusterDistance',
+        'antecedentClusterSize', 'mentionClusterSize', 'exactStringMatch', 'identicalHeadWords', 
+        'identicalHeadWordsAndProper', 'numberMatch', 'genderMatch', 'naturalGenderMatch',
+        'animacyMatch', 'nerMatch', 'clusterHeadwordMatch', 'clusterProperHeadwordMatch',
+        'clusterGenitiveMatch', 'clusterLemmaHeadMatch', 'wordvecHeadwordDistance']
+    allFeatureNames = np.concatenate((manualFeatures, encoder.get_feature_names(['mention_deprel', 'mention_headWord', 'mentionNextWordUpos', 'mentionNextWordText'])), 0)
+    
+    selectedFeatures = []
+    mutualInfo = mutual_info_classif(X, Y)
+    if config.debugFeatureSelection:
+        print(f'Selected features for {name} sieve')
+    for i, featureName in enumerate(allFeatureNames):
+        binary = True
+        zeroes = 0
+        ones = 0
+        for j in range(0,len(X)):
+            if X[j][i] == 0:
+                zeroes+=1
+            elif X[j][i] == 1:
+                ones+=1
+            else:
+                binary = False
+        if binary and (ones < config.allowedFeatureRarity or zeroes < config.allowedFeatureRarity):
+            rareBinary = True
+        else:
+            rareBinary = False
+        if not rareBinary and mutualInfo[i] > config.minimalMutualInformation:
+            selectedFeatures.append(1)
+            if config.debugFeatureSelection:
+                print(f'{featureName} {mutualInfo[i]}')
+        else:
+            selectedFeatures.append(0)
+    if config.debugFeatureSelection:
+        print()
+
+    # This part removes all features that are not selected from X
+    X = np.transpose(X)
+    tempX = []
+    for i in range(0, len(X)):
+        if selectedFeatures[i]:
+            tempX.append(X[i])
+    X = np.transpose(np.array(tempX))
+
     model.fit(X, Y)
-    print(model.feature_importances_)
+
     joblib.dump(model, f'models/{name}Model.joblib')
+    joblib.dump(encoder, f'models/{name}OneHotEncoder.joblib')
+    joblib.dump(selectedFeatures, f'models/{name}SelectedFeatures.joblib')
+
     for s in config.scaffoldingSieves:
         if s['name'] == name:
             sieve = s
     for doc in docs:
-        doSievePasses(doc, wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model)])
+        doSievePasses(doc, wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model, encoder, selectedFeatures)])
 
 def trainSieves(config: Config, docs: List[Document], wordVectors):
     properMentionPairs = []

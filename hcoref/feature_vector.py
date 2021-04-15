@@ -101,3 +101,11 @@ def getFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: M
         identicalHeadWordsAndProper, numberMatch, genderMatch, naturalGenderMatch,
         animacyMatch, nerMatch, clusterHeadwordMatch, clusterProperHeadwordMatch,
         clusterGenitiveMatch, clusterLemmaHeadMatch, wordvecHeadwordDistance]
+
+def getStringFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    lastId = mention.stanzaIds[-1] # stanza ids start at 1!
+    if lastId <= len(doc.stanzaAnnotation.sentences[mention.stanzaSentence].words):
+        mentionNextWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[lastId]
+    else:
+        mentionNextWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence+1].words[0]
+    return [mention.features.headWordDeprel, mention.features.headWord, mentionNextWord.upos, mentionNextWord.text]

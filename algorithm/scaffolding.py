@@ -1,23 +1,28 @@
 from preprocessing.document import Document, Mention
 from preprocessing.config import Config
-from hcoref.feature_vector import getFeatureVector
+from hcoref.feature_vector import getFeatureVector, getStringFeatureVector
 
 import operator
 from typing import List
 import joblib
 from gensim.models import KeyedVectors
+import numpy as np
 
 class Sieve:
     name: str
     sentenceLimit: int
     threshold: float
     model = None
+    encoder = None
+    selectedFeatures: List[int]
 
-    def __init__(self, name, sentenceLimit, threshold, model):
+    def __init__(self, name, sentenceLimit, threshold, model, encoder, selectedFeatures):
         self.name = name
         self.sentenceLimit = sentenceLimit
         self.threshold = threshold
         self.model = model
+        self.encoder = encoder
+        self.selectedFeatures = selectedFeatures
 
 def useSieve(sieve, doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int) -> float:
     if sieve.name == 'proper':
@@ -32,8 +37,17 @@ def useSieve(sieve, doc: Document, wordVectors, mention: Mention, antecedent: Me
     if sieve.name == 'pronoun':
         if mention.features.upos != 'PRON' or antecedent.features.upos != 'PRON':
             return 0.0 
-    featureVector = getFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
-    results = sieve.model.predict_proba([featureVector])
+    nonStringFeatures = getFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
+    stringFeatures = getStringFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
+    stringFeatures = sieve.encoder.transform([stringFeatures]).toarray()
+    featureVector = np.concatenate((nonStringFeatures, stringFeatures[0]), 0)
+
+    selectedFeatures = []
+    for i in range(0, len(featureVector)):
+        if sieve.selectedFeatures[i]:
+            selectedFeatures.append(featureVector[i])
+
+    results = sieve.model.predict_proba([selectedFeatures])
     return results[0][1]
 
 # Moves all mentions in the mention cluster to the antecedent cluster.
@@ -92,7 +106,9 @@ def scaffoldingAlgorithm(doc: Document, config: Config):
     for s in config.scaffoldingSieves:
         name = s['name']
         model = joblib.load(f'models/{name}Model.joblib')
-        sieves.append(Sieve(s['name'], s['sentenceLimit'], s['threshold'], model))
+        encoder = joblib.load(f'models/{name}OneHotEncoder.joblib')
+        selectedFeatures = joblib.load(f'models/{name}SelectedFeatures.joblib')
+        sieves.append(Sieve(s['name'], s['sentenceLimit'], s['threshold'], model, encoder, selectedFeatures))
     # Create a cluster for each mention, containing only that mention
     doc.predictedClusters = {}
     for mention in doc.predictedMentions.values():
@@ -104,5 +120,5 @@ def scaffoldingAlgorithm(doc: Document, config: Config):
         doc.eligibleMentions.append(mention)
     # Probably should have some different ordering
     doc.eligibleMentions.sort(key=operator.attrgetter('startPos'))
-    wordVectors = KeyedVectors.load_word2vec_format("../model.bin", binary=True)
+    wordVectors = KeyedVectors.load_word2vec_format(config.wordVectorFile, binary=True)
     doSievePasses(doc, wordVectors, sieves)
