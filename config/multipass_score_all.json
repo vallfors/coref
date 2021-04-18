@@ -1,8 +1,9 @@
 {
     "useGoldMentions": true,
     "algorithm": "multipass",
-    "multipassSieves": ["exactMatch", "genetiveResolution", "pronounResolution"],
+    "multipassSieves": ["exactMatch", "genetiveResolution", "lemmaHeadWordMatch", "headWordMatch","wordVectorDistance", "pronounResolution"],
     "inputFile": "./data/textinator/devfromtrain.json",
+    "wordVectorFile": "../model.bin",
     "useAllDocs": true,
     "compareClusters": false,
     "writeForScoring": true,

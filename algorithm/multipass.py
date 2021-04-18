@@ -5,12 +5,12 @@ import operator
 from typing import List
 
 # Pass 2 from Lee et al 2013
-def exactMatch(doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
+def exactMatch(config: Config, doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
     if mention.features.upos == 'PRON':
         return False
     return mention.text.lower() == candidateAntecedent.text.lower() 
 
-def lemmaHeadWordMatch(doc: Document, mention: Mention, ca: Mention) -> bool:
+def lemmaHeadWordMatch(config: Config, doc: Document, mention: Mention, ca: Mention) -> bool:
     if mention.features.upos == 'PRON':
         return False
     for id in mention.stanzaIds:
@@ -30,7 +30,7 @@ def lemmaHeadWordMatch(doc: Document, mention: Mention, ca: Mention) -> bool:
     return False
 
 
-def headWordMatch(doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
+def headWordMatch(config: Config, doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
     if not mention.features.definite:
         return False
     if mention.features.upos == 'PRON':
@@ -39,7 +39,7 @@ def headWordMatch(doc: Document, mention: Mention, candidateAntecedent: Mention)
 
 # Pass 3 from Lee et al 2013
 # Returns true if the strings are identical up to and including their headwords.
-def relaxedStringMatch(doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
+def relaxedStringMatch(config: Config, doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
     if mention.features.upos == 'PRON':
         return False
     mentionTextUntilHead = ''
@@ -57,7 +57,7 @@ def relaxedStringMatch(doc: Document, mention: Mention, candidateAntecedent: Men
     return mentionTextUntilHead.lower() == antecedentTextUntilHead.lower()
 
 # Pass 5 from Lee et al 2013
-def strictHeadMatch(doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
+def strictHeadMatch(config: Config, doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
     if mention.features.upos == 'PRON':
         return False
     headWords = []
@@ -69,7 +69,7 @@ def strictHeadMatch(doc: Document, mention: Mention, candidateAntecedent: Mentio
     return True
 
 # Pass 10 from Lee et al 2013
-def pronounResolution(doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
+def pronounResolution(config: Config, doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
     if mention.features.upos != 'PRON':
         return False
     if len(mention.stanzaIds) > 1:
@@ -104,7 +104,7 @@ def pronounResolution(doc: Document, mention: Mention, candidateAntecedent: Ment
 
     return True
 
-def genetiveResolution(doc: Document, mention: Mention, ca: Mention) -> bool:
+def genetiveResolution(config: Config, doc: Document, mention: Mention, ca: Mention) -> bool:
     if mention.features.upos == 'PRON':
         return False
     if mention.text[len(mention.text)-1] == 's' and mention.text[:len(mention.text)-1].lower() == ca.text.lower():
@@ -112,6 +112,23 @@ def genetiveResolution(doc: Document, mention: Mention, ca: Mention) -> bool:
     if ca.text[len(ca.text)-1] == 's' and ca.text[:len(ca.text)-1].lower() == mention.text.lower():
         return True
     return False
+
+def wordVectorDistance(config: Config, doc: Document, mention: Mention, ca: Mention) -> bool:
+    if mention.features.upos == 'PRON':
+        return False
+    if mention.features.headWord in config.wordVectors.key_to_index and ca.features.headWord in config.wordVectors.key_to_index:
+        wordvecHeadwordDistance = config.wordVectors.distance(mention.features.headWord.lower(), ca.features.headWord.lower())
+        if wordvecHeadwordDistance < 0.2:
+            print(mention.features.headWord)
+            print(ca.features.headWord)
+            print(wordvecHeadwordDistance)
+            print()
+            return True
+        else:
+            return False
+    
+    else:
+        return False
 
 # Moves all mentions in the mention cluster to the antecedent cluster.
 def link(doc: Document, mention: Mention, antecedent: Mention):
@@ -150,28 +167,27 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
 
 # Takes first possible antecedent that satisfies the sieve. Return value indicates whether any
 # antecedent was found.
-def pickAntecedent(doc: Document, sieve,  mention: Mention) -> bool:
+def pickAntecedent(config: Config, doc: Document, sieve,  mention: Mention) -> bool:
     for antecedent in getCandidateAntecedents(doc, mention):
-        if sieve(doc, mention, antecedent):
+        if sieve(config, doc, mention, antecedent):
             link(doc, mention, antecedent)
             return True
     return False
 
-def doSievePass(doc: Document, sieve):
+def doSievePass(config: Config, doc: Document, sieve):
     newEligibleMentions = []
     for mention in doc.eligibleMentions:
-        
-        antecedentFound = pickAntecedent(doc, sieve, mention)
+        antecedentFound = pickAntecedent(config, doc, sieve, mention)
         if not antecedentFound:
             newEligibleMentions.append(mention)
     doc.eligibleMentions = newEligibleMentions
 
-def multiPassSieve(doc: Document, sieves):
+def multiPassSieve(config: Config, doc: Document, sieves):
     for sieve in sieves:
-        doSievePass(doc, sieve)
+        doSievePass(config, doc, sieve)
 
 def multiPass(doc: Document, config: Config):
-    sieveMapping = {'exactMatch': exactMatch,'genetiveResolution': genetiveResolution, 'lemmaHeadWordMatch': lemmaHeadWordMatch, 'pronounResolution': pronounResolution}
+    sieveMapping = {'exactMatch': exactMatch,'genetiveResolution': genetiveResolution, 'headWordMatch': headWordMatch, 'lemmaHeadWordMatch': lemmaHeadWordMatch, 'pronounResolution': pronounResolution,'wordVectorDistance': wordVectorDistance}
     sieves = []
     for s in config.multipassSieves:
         if not s in sieveMapping:
@@ -188,4 +204,4 @@ def multiPass(doc: Document, config: Config):
         doc.eligibleMentions.append(mention)
     # Probably should have some different ordering
     doc.eligibleMentions.sort(key=operator.attrgetter('startPos'))
-    multiPassSieve(doc, sieves)
+    multiPassSieve(config, doc, sieves)

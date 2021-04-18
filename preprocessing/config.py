@@ -1,5 +1,6 @@
 import json
 from typing import List
+from gensim.models import KeyedVectors
 
 # A configuration for the coreference resolution.
 # This object should contain information about which algorithm to run,
@@ -20,6 +21,7 @@ class Config:
     debugFeatureSelection: bool
     minimalMutualInformation: float
     allowedFeatureRarity: int
+    wordVectors = None
 
     def __init__(self, filename: str):
         with open(filename) as f:
@@ -34,7 +36,6 @@ class Config:
             self.multipassSieves = configDict['multipassSieves']
         if configDict['algorithm'] == 'hcoref':
             self.scaffoldingSieves = configDict['scaffoldingSieves']
-            self.wordVectorFile = configDict['wordVectorFile']
             self.debugFeatureSelection = configDict['debugFeatureSelection']
         self.writeForScoring = configDict['writeForScoring']
         self.debugMentionDetection = configDict['debugMentionDetection']
@@ -44,3 +45,5 @@ class Config:
             self.maxDepth = configDict['maxDepth']
             self.minimalMutualInformation = configDict['minimalMutualInformation']
             self.allowedFeatureRarity = configDict['allowedFeatureRarity']
+        self.wordVectorFile = configDict['wordVectorFile']
+        self.wordVectors = KeyedVectors.load_word2vec_format(self.wordVectorFile, binary=True)
