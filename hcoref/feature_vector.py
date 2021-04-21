@@ -104,8 +104,10 @@ def getFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: M
 
 def getStringFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
     lastId = mention.stanzaIds[-1] # stanza ids start at 1!
-    if lastId <= len(doc.stanzaAnnotation.sentences[mention.stanzaSentence].words):
+    if lastId < len(doc.stanzaAnnotation.sentences[mention.stanzaSentence].words):
         mentionNextWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[lastId]
-    else:
+    elif mention.stanzaSentence+1 < len(doc.stanzaAnnotation.sentences):
         mentionNextWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence+1].words[0]
+    else:
+        mentionNextWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[0] # Should happen rarely, not an actual fix
     return [mention.features.headWordDeprel, mention.features.headWord, mentionNextWord.upos, mentionNextWord.text]
