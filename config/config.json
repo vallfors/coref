@@ -5,28 +5,36 @@
         {
             "name": "proper",
             "sentenceLimit": 15,
-            "threshold": 0.15
+            "threshold": 0.3,
+            "mentionPos": "PROPN",
+            "antecedentPos": "PROPN"
         },
         {
             "name": "common",
             "sentenceLimit": 15,
-            "threshold": 0.15
+            "threshold": 0.3,
+            "mentionPos": "NOUN",
+            "antecedentPos": "NOUN"
         },
         {
             "name": "properCommon",
             "sentenceLimit": 15,
-            "threshold": 0.15
+            "threshold": 0.3,
+            "mentionPos": "NOUN",
+            "antecedentPos": "PROPN"
         },
         {
             "name": "pronoun",
             "sentenceLimit": 15,
-            "threshold": 0.15
+            "threshold": 0.2,
+            "mentionPos": "PRON",
+            "antecedentPos": "ANY"
         }
     ],
     "inputFile": "./data/textinator/devfromtrain.json",
     "trainingInputFile": "./data/textinator/train.json",
     "wordVectorFile": "../model.bin",
-    "maxDepth": 2,
+    "maxDepth": -1,
     "useAllDocs": true,
     "docId": 0,
     "compareClusters": false,

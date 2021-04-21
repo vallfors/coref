@@ -15,15 +15,14 @@ from algorithm.scaffolding import doSievePasses, Sieve
 
 # Returns an ordered list of candidate antecedents for a mention,
 # in the order they should be considered in.
-def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
+def getCandidateAntecedents(doc: Document, mention: Mention, maxSentenceDistance: int) -> List[Mention]:
     x = list(doc.predictedMentions.values())
     x.sort(key=operator.attrgetter('startPos'))
     antecedents = []
-    sentenceThreshold = 15
     for idx, a in enumerate(x):
         if a.stanzaSentence >= mention.stanzaSentence:
             break
-        if a.stanzaSentence - mention.stanzaSentence >= sentenceThreshold:
+        if mention.stanzaSentence - a.stanzaSentence >= maxSentenceDistance:
             continue
         antecedents.append(a)
     sameSentence = []
@@ -37,7 +36,7 @@ def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
     
     return antecedents
 
-def trainSieveAndUse(docs: List[Document], config: Config, wordVectors, mentionPairs, Y, name):
+def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, sieve):
     if config.maxDepth == -1: # No max depth
         model = RandomForestClassifier(random_state=0)
     else:
@@ -62,8 +61,9 @@ def trainSieveAndUse(docs: List[Document], config: Config, wordVectors, mentionP
     
     selectedFeatures = []
     mutualInfo = mutual_info_classif(X, Y, random_state=0)
+
     if config.debugFeatureSelection:
-        print(f'Selected features for {name} sieve')
+        print(f'Selected features for {sieve["name"]} sieve')
     for i, featureName in enumerate(allFeatureNames):
         binary = True
         zeroes = 0
@@ -98,25 +98,22 @@ def trainSieveAndUse(docs: List[Document], config: Config, wordVectors, mentionP
 
     model.fit(X, Y)
 
-    joblib.dump(model, f'models/{name}Model.joblib')
-    joblib.dump(encoder, f'models/{name}OneHotEncoder.joblib')
-    joblib.dump(selectedFeatures, f'models/{name}SelectedFeatures.joblib')
+    joblib.dump(model, f'models/{sieve["name"]}Model.joblib')
+    joblib.dump(encoder, f'models/{sieve["name"]}OneHotEncoder.joblib')
+    joblib.dump(selectedFeatures, f'models/{sieve["name"]}SelectedFeatures.joblib')
 
-    for s in config.scaffoldingSieves:
-        if s['name'] == name:
-            sieve = s
     for doc in docs:
-        doSievePasses(doc, wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model, encoder, selectedFeatures)])
+        doSievePasses(doc, config.wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model, encoder, selectedFeatures)])
 
 def trainSieves(config: Config, docs: List[Document], wordVectors):
-    properMentionPairs = []
-    properY = []
-    commonMentionPairs = []
-    commonY = []
-    properCommonMentionPairs = []
-    properCommonY = []
-    pronounMentionPairs = []
-    pronounY = []
+    sieves = config.scaffoldingSieves
+    mentionPairs = {}
+    Y = {}
+    maxSentenceDistance = 0
+    for sieve in sieves:
+        mentionPairs[sieve['name']] = []
+        Y[sieve['name']] = []
+        maxSentenceDistance = max(maxSentenceDistance, sieve['sentenceLimit'])
     for doc in docs:
         # Create a cluster for each mention, containing only that mention
         doc.predictedClusters = {}
@@ -125,33 +122,25 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
             mention.predictedCluster = mention.id
         for mention in doc.predictedMentions.values():
             mentionDistance = 0
-            for antecedent in getCandidateAntecedents(doc, mention):
-                if mention.features.upos == 'PROPN' and antecedent.features.upos == 'PROPN':
-                    mentionPairs = properMentionPairs
-                    y = properY
-                elif mention.features.upos == 'NOUN' and antecedent.features.upos == 'NOUN':
-                    mentionPairs = commonMentionPairs
-                    y = commonY
-                elif mention.features.upos == 'NOUN' and antecedent.features.upos == 'PROPN':
-                    mentionPairs = properCommonMentionPairs
-                    y = properCommonY
-                elif mention.features.upos == 'PRON':
-                    mentionPairs = pronounMentionPairs
-                    y = pronounY
-                else:
-                    continue
-                if mention.cluster == antecedent.cluster and mention.cluster != -1:
-                    y.append(1)
-                else:
-                    y.append(0)
-                mentionPairs.append((doc, wordVectors, mention, antecedent, mentionDistance))
-                mentionDistance += 1
-    
+            for antecedent in getCandidateAntecedents(doc, mention, maxSentenceDistance):
+                sievesMatching = 0
+                for sieve in sieves:
+                    if mention.stanzaSentence - antecedent.stanzaSentence >= sieve['sentenceLimit']:
+                        continue
+                    if sieve['mentionPos'] == mention.features.upos or sieve['mentionPos'] == 'ANY':
+                        if sieve['antecedentPos'] == antecedent.features.upos or sieve['antecedentPos'] == 'ANY':
+                            if mention.cluster == antecedent.cluster and mention.cluster != -1:
+                                Y[sieve['name']].append(1)
+                            else:
+                                Y[sieve['name']].append(0)
+                            sievesMatching += 1
+                            mentionPairs[sieve['name']].append((doc, wordVectors, mention, antecedent, mentionDistance))
+                if sievesMatching > 0: # This check makes it perform better, but I don't know why
+                    mentionDistance += 1
+
     np.set_printoptions(suppress=True)
-    trainSieveAndUse(docs, config, wordVectors, properMentionPairs, properY, 'proper')
-    trainSieveAndUse(docs, config, wordVectors, commonMentionPairs, commonY, 'common')
-    trainSieveAndUse(docs, config, wordVectors, properCommonMentionPairs, properCommonY, 'properCommon')
-    trainSieveAndUse(docs, config, wordVectors, pronounMentionPairs, pronounY, 'pronoun')
+    for sieve in sieves:
+        trainSieveAndUse(docs, config, mentionPairs[sieve['name']], Y[sieve['name']], sieve)
 
 def trainAll(docs: List[Document], config: Config):
     wordVectors = KeyedVectors.load_word2vec_format(config.wordVectorFile, binary=True)
