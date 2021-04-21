@@ -61,7 +61,7 @@ def trainSieveAndUse(docs: List[Document], config: Config, wordVectors, mentionP
     allFeatureNames = np.concatenate((manualFeatures, encoder.get_feature_names(['mention_deprel', 'mention_headWord', 'mentionNextWordUpos', 'mentionNextWordText'])), 0)
     
     selectedFeatures = []
-    mutualInfo = mutual_info_classif(X, Y)
+    mutualInfo = mutual_info_classif(X, Y, random_state=0)
     if config.debugFeatureSelection:
         print(f'Selected features for {name} sieve')
     for i, featureName in enumerate(allFeatureNames):
