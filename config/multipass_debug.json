@@ -7,6 +7,7 @@
     "docId": 0,
     "compareClusters": true,
     "writeForScoring": true,
-    "debugMentionDetection": true
+    "debugMentionDetection": true,
+    "wordVectorFile": "../model.bin"
 
 }

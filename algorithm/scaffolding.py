@@ -88,7 +88,11 @@ def getCandidateAntecedents(doc: Document, mention: Mention, sentenceLimit: int)
 
 def doSievePasses(doc: Document, wordVectors, sieves: List[Sieve]):
     for sieve in sieves:
+        mentionCount = 0
         for mention in doc.predictedMentions.values():
+            if mentionCount%100 == 0:
+                print(f'Mention {mentionCount}. Candidates: {len(getCandidateAntecedents(doc, mention, sieve.sentenceLimit))}')
+            mentionCount += 1
             bestValue = 0.0
             bestAntecedent = None
             mentionDistance = 0

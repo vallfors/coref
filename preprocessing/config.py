@@ -22,6 +22,7 @@ class Config:
     minimalMutualInformation: float
     allowedFeatureRarity: int
     wordVectors = None
+    useSubsampling: bool
 
     def __init__(self, filename: str):
         with open(filename) as f:
@@ -45,5 +46,6 @@ class Config:
             self.maxDepth = configDict['maxDepth']
             self.minimalMutualInformation = configDict['minimalMutualInformation']
             self.allowedFeatureRarity = configDict['allowedFeatureRarity']
+            self.useSubsampling = configDict['useSubsampling']
         self.wordVectorFile = configDict['wordVectorFile']
         self.wordVectors = KeyedVectors.load_word2vec_format(self.wordVectorFile, binary=True)

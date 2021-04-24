@@ -1,5 +1,5 @@
 {
-    "useGoldMentions": true,
+    "useGoldMentions": false,
     "algorithm": "hcoref",
     "scaffoldingSieves": [
         {
@@ -15,13 +15,6 @@
             "threshold": 0.3,
             "mentionPos": "NOUN",
             "antecedentPos": "NOUN"
-        },
-        {
-            "name": "properCommon",
-            "sentenceLimit": 15,
-            "threshold": 0.3,
-            "mentionPos": "NOUN",
-            "antecedentPos": "PROPN"
         },
         {
             "name": "pronoun",
@@ -42,6 +35,6 @@
     "debugMentionDetection": false,
     "debugFeatureSelection": true,
     "minimalMutualInformation": 0.0001,
-    "allowedFeatureRarity": 30
-
+    "allowedFeatureRarity": 30,
+    "useSubsampling": true
 }
