@@ -15,40 +15,49 @@ class Sieve:
     model = None
     encoder = None
     selectedFeatures: List[int]
+    infoDict = {}
 
-    def __init__(self, name, sentenceLimit, threshold, model, encoder, selectedFeatures):
+    def __init__(self, name, sentenceLimit, threshold, model, encoder, selectedFeatures, infoDict):
         self.name = name
         self.sentenceLimit = sentenceLimit
         self.threshold = threshold
         self.model = model
         self.encoder = encoder
         self.selectedFeatures = selectedFeatures
+        self.infoDict = infoDict
 
-def useSieve(sieve, doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int) -> float:
-    if sieve.name == 'proper':
-        if mention.features.upos != 'PROPN' or antecedent.features.upos != 'PROPN':
-            return 0.0
-    if sieve.name == 'common':
-        if mention.features.upos != 'NOUN' or antecedent.features.upos != 'NOUN':
-            return 0.0
-    if sieve.name == 'properCommon':
-        if mention.features.upos != 'NOUN' or antecedent.features.upos != 'PROPN':
-            return 0.0 
-    if sieve.name == 'pronoun':
-        if mention.features.upos != 'PRON' or antecedent.features.upos != 'PRON':
-            return 0.0 
-    nonStringFeatures = getFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
-    stringFeatures = getStringFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
-    stringFeatures = sieve.encoder.transform([stringFeatures]).toarray()
-    featureVector = np.concatenate((nonStringFeatures, stringFeatures[0]), 0)
-
-    selectedFeatures = []
-    for i in range(0, len(featureVector)):
-        if sieve.selectedFeatures[i]:
-            selectedFeatures.append(featureVector[i])
-
-    results = sieve.model.predict_proba([selectedFeatures])
-    return results[0][1]
+def useSieve(sieve, doc: Document, wordVectors, mention: Mention, antecedents: List[Mention]) -> float:
+    if sieve.infoDict['mentionPos'] != 'ANY' and mention.features.upos != sieve.infoDict['mentionPos']:
+        return None
+    mentionDistance = 0
+    featureVectors = []
+    if len(antecedents) == 0:
+        return None
+    results = []
+    for antecedent in antecedents:
+        nonStringFeatures = getFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
+        stringFeatures = getStringFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
+        stringFeatures = sieve.encoder.transform([stringFeatures]).toarray()
+        featureVector = np.concatenate((nonStringFeatures, stringFeatures[0]), 0)
+        mentionDistance += 1
+        selectedFeatures = []
+        for i in range(0, len(featureVector)):
+            if sieve.selectedFeatures[i]:
+                selectedFeatures.append(featureVector[i])
+        featureVectors.append(selectedFeatures)
+    results = sieve.model.predict_proba(featureVectors)
+    bestValue = 0.0
+    bestAntecedentIndex = -1
+    for antecedentIndex in range(0, len(antecedents)):
+        if sieve.infoDict['antecedentPos'] != 'ANY' and antecedents[antecedentIndex].features.upos != sieve.infoDict['antecedentPos']:
+            continue
+        if results[antecedentIndex][1] > bestValue:
+            bestValue = results[antecedentIndex][1]
+            bestAntecedentIndex = antecedentIndex
+    if bestValue > sieve.threshold and bestAntecedentIndex != -1:
+        return antecedents[bestAntecedentIndex]
+    else:
+        return None
 
 # Moves all mentions in the mention cluster to the antecedent cluster.
 def link(doc: Document, mention: Mention, antecedent: Mention):
@@ -65,12 +74,12 @@ def link(doc: Document, mention: Mention, antecedent: Mention):
 # Returns an ordered list of candidate antecedents for a mention,
 # in the order they should be considered in.
 # TODO: Should use the tree structure for the previous two sentences
-def getCandidateAntecedents(doc: Document, mention: Mention, sentenceLimit: int) -> List[Mention]:
+def getCandidateAntecedents(doc: Document, mention: Mention, sieve: Sieve) -> List[Mention]:
     x = list(doc.predictedMentions.values())
     x.sort(key=operator.attrgetter('startPos'))
     antecedents = []
     for idx, a in enumerate(x):
-        if mention.stanzaSentence - a.stanzaSentence >= sentenceLimit:
+        if mention.stanzaSentence - a.stanzaSentence >= sieve.infoDict['sentenceLimit']:
             continue
         if a.stanzaSentence >= mention.stanzaSentence:
             break
@@ -91,18 +100,11 @@ def doSievePasses(doc: Document, wordVectors, sieves: List[Sieve]):
         mentionCount = 0
         for mention in doc.predictedMentions.values():
             if mentionCount%100 == 0:
-                print(f'Mention {mentionCount}. Candidates: {len(getCandidateAntecedents(doc, mention, sieve.sentenceLimit))}')
+                print(f'Mention {mentionCount}. Candidates: {len(getCandidateAntecedents(doc, mention, sieve))}')
             mentionCount += 1
-            bestValue = 0.0
-            bestAntecedent = None
-            mentionDistance = 0
-            for candidateAntecedent in getCandidateAntecedents(doc, mention, sieve.sentenceLimit):
-                val = useSieve(sieve, doc, wordVectors, mention, candidateAntecedent, mentionDistance)
-                mentionDistance += 1
-                if val > bestValue:
-                    bestValue = val
-                    bestAntecedent = candidateAntecedent
-            if bestValue > sieve.threshold and bestAntecedent != None:
+            candidateAntecedents = getCandidateAntecedents(doc, mention, sieve)
+            bestAntecedent = useSieve(sieve, doc, wordVectors, mention, candidateAntecedents)
+            if bestAntecedent != None:
                 link(doc, mention, bestAntecedent)
 
 def scaffoldingAlgorithm(doc: Document, config: Config): 
@@ -112,7 +114,7 @@ def scaffoldingAlgorithm(doc: Document, config: Config):
         model = joblib.load(f'models/{name}Model.joblib')
         encoder = joblib.load(f'models/{name}OneHotEncoder.joblib')
         selectedFeatures = joblib.load(f'models/{name}SelectedFeatures.joblib')
-        sieves.append(Sieve(s['name'], s['sentenceLimit'], s['threshold'], model, encoder, selectedFeatures))
+        sieves.append(Sieve(s['name'], s['sentenceLimit'], s['threshold'], model, encoder, selectedFeatures, s))
     # Create a cluster for each mention, containing only that mention
     doc.predictedClusters = {}
     for mention in doc.predictedMentions.values():

@@ -123,7 +123,7 @@ def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, siev
     print(f'Applying sieve {time.time() - startTime}')
     startTime = time.time()
     for doc in docs:
-        doSievePasses(doc, config.wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model, encoder, selectedFeatures)])
+        doSievePasses(doc, config.wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model, encoder, selectedFeatures, sieve)])
 
 def trainSieves(config: Config, docs: List[Document], wordVectors):
     sieves = config.scaffoldingSieves
@@ -195,12 +195,25 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
             model = joblib.load(f'models/{name}Model.joblib')
             encoder = joblib.load(f'models/{name}OneHotEncoder.joblib')
             selectedFeatures = joblib.load(f'models/{name}SelectedFeatures.joblib')
-            for idx, mentionPair in enumerate(negativeMentionPairs[sieve['name']]):
-                positiveLikelihood = useSieve(Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model, encoder, selectedFeatures), *mentionPair)
-                difficulties.append((1-positiveLikelihood, idx))
+            featureVectors = []
+            for mentionPair in negativeMentionPairs[sieve['name']]:
+                nonStringFeatures = getFeatureVector(*mentionPair)
+                stringFeatures = getStringFeatureVector(*mentionPair)
+                stringFeatures = encoder.transform([stringFeatures]).toarray()
+                featureVector = np.concatenate((nonStringFeatures, stringFeatures[0]), 0)
+                featuresToUse = []
+                for i in range(0, len(featureVector)):
+                    if selectedFeatures[i]:
+                        featuresToUse.append(featureVector[i])
+                featureVectors.append(featuresToUse)
+            results = model.predict_proba(featureVectors)
+            for i in range(0, len(results)):
+                difficulties.append((results[i][0], i))
             difficulties.sort()
             numSamples = int(0.2*len(negativeMentionPairs[sieve['name']]))
             difficultNegatives = []
+            print(f'Len of results: {len(results)}')
+            print(f'Numsamples: {numSamples}')
             for i in range(0, numSamples):
                 difficultNegatives.append(negativeMentionPairs[sieve['name']][difficulties[i][1]])
             difficultPairs[sieve['name']] = difficultNegatives + positiveMentionPairs[sieve['name']]
