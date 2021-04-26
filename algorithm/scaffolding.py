@@ -1,3 +1,4 @@
+from preprocessing import config
 from preprocessing.document import Document, Mention
 from preprocessing.config import Config
 from hcoref.feature_vector import getFeatureVector, getStringFeatureVector
@@ -26,7 +27,7 @@ class Sieve:
         self.selectedFeatures = selectedFeatures
         self.infoDict = infoDict
 
-def useSieve(sieve, doc: Document, wordVectors, mention: Mention, antecedents: List[Mention]) -> float:
+def useSieve(config: Config, sieve, doc: Document, wordVectors, mention: Mention, antecedents: List[Mention]) -> float:
     if sieve.infoDict['mentionPos'] != 'ANY' and mention.features.upos != sieve.infoDict['mentionPos']:
         return None
     mentionDistance = 0
@@ -35,7 +36,7 @@ def useSieve(sieve, doc: Document, wordVectors, mention: Mention, antecedents: L
         return None
     results = []
     for antecedent in antecedents:
-        nonStringFeatures = getFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
+        nonStringFeatures = getFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance, config.features)
         stringFeatures = getStringFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
         stringFeatures = sieve.encoder.transform([stringFeatures]).toarray()
         featureVector = np.concatenate((nonStringFeatures, stringFeatures[0]), 0)
@@ -95,11 +96,11 @@ def getCandidateAntecedents(doc: Document, mention: Mention, sieve: Sieve) -> Li
     
     return antecedents
 
-def doSievePasses(doc: Document, wordVectors, sieves: List[Sieve]):
+def doSievePasses(config: Config, doc: Document, wordVectors, sieves: List[Sieve]):
     for sieve in sieves:
         for mention in doc.predictedMentions.values():
             candidateAntecedents = getCandidateAntecedents(doc, mention, sieve)
-            bestAntecedent = useSieve(sieve, doc, wordVectors, mention, candidateAntecedents)
+            bestAntecedent = useSieve(config, sieve, doc, wordVectors, mention, candidateAntecedents)
             if bestAntecedent != None:
                 link(doc, mention, bestAntecedent)
 
@@ -123,4 +124,4 @@ def scaffoldingAlgorithm(doc: Document, config: Config):
     # Probably should have some different ordering
     doc.eligibleMentions.sort(key=operator.attrgetter('startPos'))
     wordVectors = KeyedVectors.load_word2vec_format(config.wordVectorFile, binary=True)
-    doSievePasses(doc, wordVectors, sieves)
+    doSievePasses(config, doc, wordVectors, sieves)

@@ -23,6 +23,7 @@ class Config:
     allowedFeatureRarity: int
     wordVectors = None
     useSubsampling: bool
+    features: List[str]
 
     def __init__(self, filename: str):
         with open(filename) as f:
@@ -38,6 +39,7 @@ class Config:
         if configDict['algorithm'] == 'hcoref':
             self.scaffoldingSieves = configDict['scaffoldingSieves']
             self.debugFeatureSelection = configDict['debugFeatureSelection']
+            self.features = configDict['features']
         self.writeForScoring = configDict['writeForScoring']
         self.debugMentionDetection = configDict['debugMentionDetection']
         self.compareClusters = configDict['compareClusters']

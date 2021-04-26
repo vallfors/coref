@@ -1,25 +1,25 @@
 {
-    "useGoldMentions": false,
+    "useGoldMentions": true,
     "algorithm": "hcoref",
     "scaffoldingSieves": [
         {
             "name": "proper",
             "sentenceLimit": 15,
-            "threshold": 0.3,
+            "threshold": 0.15,
             "mentionPos": "PROPN",
             "antecedentPos": "PROPN"
         },
         {
             "name": "common",
             "sentenceLimit": 15,
-            "threshold": 0.3,
+            "threshold": 0.15,
             "mentionPos": "NOUN",
             "antecedentPos": "NOUN"
         },
         {
             "name": "pronoun",
             "sentenceLimit": 15,
-            "threshold": 0.2,
+            "threshold": 0.15,
             "mentionPos": "PRON",
             "antecedentPos": "ANY"
         }
@@ -33,8 +33,13 @@
     "compareClusters": false,
     "writeForScoring": true,
     "debugMentionDetection": false,
-    "debugFeatureSelection": true,
+    "debugFeatureSelection": false,
     "minimalMutualInformation": 0.0001,
     "allowedFeatureRarity": 30,
-    "useSubsampling": true
+    "useSubsampling": false,
+    "features": ["sentenceDistance", "mentionDistance", "minimumClusterDistance",
+        "antecedentClusterSize", "mentionClusterSize", "exactStringMatch", "identicalHeadWords", 
+        "identicalHeadWordsAndProper", "numberMatch", "genderMatch", "naturalGenderMatch",
+        "animacyMatch", "nerMatch", "clusterHeadWordMatch", "clusterProperHeadWordMatch",
+        "clusterGenitiveHeadWordMatch", "clusterLemmaHeadWordMatch", "wordvecHeadWordDistance"]
 }

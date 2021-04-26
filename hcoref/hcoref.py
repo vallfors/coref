@@ -46,7 +46,7 @@ def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, siev
     X = []
     stringFeatureVectors = []
     for mp in mentionPairs:
-        X.append(getFeatureVector(*mp))
+        X.append(getFeatureVector(*mp, config.features))
         stringFeatureVectors.append(getStringFeatureVector(*mp))
     
     encoder = OneHotEncoder(handle_unknown='ignore')
@@ -54,12 +54,7 @@ def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, siev
     stringFeatures = encoder.transform(stringFeatureVectors).toarray()
     X = np.concatenate((X, stringFeatures), 1)
     
-    manualFeatures = ['sentenceDistance', 'mentionDistance', 'minimumClusterDistance',
-        'antecedentClusterSize', 'mentionClusterSize', 'exactStringMatch', 'identicalHeadWords', 
-        'identicalHeadWordsAndProper', 'numberMatch', 'genderMatch', 'naturalGenderMatch',
-        'animacyMatch', 'nerMatch', 'clusterHeadwordMatch', 'clusterProperHeadwordMatch',
-        'clusterGenitiveMatch', 'clusterLemmaHeadMatch', 'wordvecHeadwordDistance']
-    allFeatureNames = np.concatenate((manualFeatures, encoder.get_feature_names(['mention_deprel', 'mention_headWord', 'mentionNextWordUpos', 'mentionNextWordText'])), 0)
+    allFeatureNames = np.concatenate((config.features, encoder.get_feature_names(['mention_deprel', 'mention_headWord', 'mentionNextWordUpos', 'mentionNextWordText'])), 0)
     
     selectedFeatures = []
     mutualInfo = mutual_info_classif(X, Y, random_state=0)
@@ -110,7 +105,7 @@ def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, siev
     joblib.dump(selectedFeatures, f'models/{sieve["name"]}SelectedFeatures.joblib')
 
     for doc in docs:
-        doSievePasses(doc, config.wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model, encoder, selectedFeatures, sieve)])
+        doSievePasses(config, doc, config.wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model, encoder, selectedFeatures, sieve)])
 
 def trainSieves(config: Config, docs: List[Document], wordVectors):
     sieves = config.scaffoldingSieves
