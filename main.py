@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 
 from transformers import pipeline
+from transformers.utils.dummy_pt_objects import load_tf_weights_in_bert_generation
 
 from preprocessing.document import *
 from preprocessing.config import *
@@ -12,7 +13,11 @@ from evaluation.cluster_matching import *
 from evaluation.score import writeConllForScoring
 from algorithm.add_features import addFeatures
 
+def logGreen(message: str):
+    print('\033[92m' + message + '\033[0m')
+
 def main():
+    logGreen('Starting coreference prediction procedure')
     parser = ArgumentParser()
     parser.add_argument('configFile', help='Path to the config file')
 
@@ -26,19 +31,26 @@ def main():
         if config.docId >= len(docs):
             raise Exception(f'Document id {config.docId} out of bounds, check config')
         docs = [docs[config.docId]]
-    for doc in docs:
+    for id, doc in enumerate(docs):
+        logGreen(f'Processing document {id}')
+        load_tf_weights_in_bert_generation('Adding stanza annotation')
         stanzaAnnotator.annotateDocument(doc)
         if not config.useGoldMentions:
+            logGreen('Doing mention detection')
             mentionDetection(doc)
         else:
             doc.predictedMentions = doc.goldMentions
+        logGreen('Preprocessing')
         addStanzaLinksToGoldMentions(doc)
         addFeatures(doc, nerPipeline)
+        logGreen('Coreference prediction')
         predictCoreference(doc, config)
         
+        logGreen('Evaluation')
         matchMentions(doc, config)
         if config.compareClusters:
             compareClusters(doc)
+        print()
     if config.writeForScoring:
         writeConllForScoring(docs)
     

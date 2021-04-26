@@ -10,7 +10,11 @@ from algorithm.add_features import addFeatures
 from hcoref.hcoref import trainAll
 from algorithm.mention_detection import mentionDetection
 
+def logGreen(message: str):
+    print('\033[92m' + message + '\033[0m')
+
 def main():
+    logGreen('Starting training procedure')
     parser = ArgumentParser()
     parser.add_argument('configFile', help='Path to the training config file')
 
@@ -21,6 +25,7 @@ def main():
     nerPipeline = pipeline('ner', model='KB/bert-base-swedish-cased-ner', tokenizer='KB/bert-base-swedish-cased-ner')
     docs = documentsFromTextinatorFile(config.trainingInputFile)
 
+    logGreen('Preprocessing documents')
     for doc in docs:
         stanzaAnnotator.annotateDocument(doc)
         if not config.useGoldMentions:
@@ -36,6 +41,7 @@ def main():
                 mention.cluster = -1 # Mention belongs to no gold cluster, since it corresponds to no gold mention.
         addFeatures(doc, nerPipeline)
     
+    logGreen('Doing training')
     trainAll(docs, config)
         
 if __name__ == "__main__":

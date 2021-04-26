@@ -39,11 +39,6 @@ def getCandidateAntecedents(doc: Document, mention: Mention, maxSentenceDistance
     return antecedents
 
 def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, sieve):
-    print(sieve['name'])
-    print(f'Length of mentionPairs: {len(mentionPairs)}')
-    print(f'Len of Y: {len(Y)}')
-    startTime = time.time()
-    print(sieve['name'])
     if config.maxDepth == -1: # No max depth
         model = RandomForestClassifier(random_state=0)
     else:
@@ -54,8 +49,6 @@ def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, siev
         X.append(getFeatureVector(*mp))
         stringFeatureVectors.append(getStringFeatureVector(*mp))
     
-    print(f'One hot encoding {time.time() - startTime}')
-    startTime = time.time()
     encoder = OneHotEncoder(handle_unknown='ignore')
     encoder.fit(stringFeatureVectors)
     stringFeatures = encoder.transform(stringFeatureVectors).toarray()
@@ -68,8 +61,6 @@ def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, siev
         'clusterGenitiveMatch', 'clusterLemmaHeadMatch', 'wordvecHeadwordDistance']
     allFeatureNames = np.concatenate((manualFeatures, encoder.get_feature_names(['mention_deprel', 'mention_headWord', 'mentionNextWordUpos', 'mentionNextWordText'])), 0)
     
-    print(f'Doing feature selection {time.time() - startTime}')
-    startTime = time.time()
     selectedFeatures = []
     mutualInfo = mutual_info_classif(X, Y, random_state=0)
 
@@ -112,16 +103,12 @@ def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, siev
             tempX.append(X[i])
     X = np.transpose(np.array(tempX))
 
-    print(f'Fitting model {time.time() - startTime}')
-    startTime = time.time()
     model.fit(X, Y)
 
     joblib.dump(model, f'models/{sieve["name"]}Model.joblib')
     joblib.dump(encoder, f'models/{sieve["name"]}OneHotEncoder.joblib')
     joblib.dump(selectedFeatures, f'models/{sieve["name"]}SelectedFeatures.joblib')
 
-    print(f'Applying sieve {time.time() - startTime}')
-    startTime = time.time()
     for doc in docs:
         doSievePasses(doc, config.wordVectors, [Sieve(sieve['name'], sieve['sentenceLimit'], sieve['threshold'], model, encoder, selectedFeatures, sieve)])
 
@@ -157,7 +144,6 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
                 if sievesMatching > 0: # This check makes it perform better, but I don't know why
                     mentionDistance += 1
 
-    np.set_printoptions(suppress=True)
     if not config.useSubsampling:
         for sieve in sieves:
             mentionPairs = negativeMentionPairs[sieve['name']] + positiveMentionPairs[sieve['name']]
@@ -174,9 +160,6 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
             samples = random.sample(negativeMentionPairs[sieve['name']], numSamples)
             subsampledPairs[sieve['name']] = samples + positiveMentionPairs[sieve['name']]
             subsampledY[sieve['name']] = [0] * len(samples) + [1] * len(positiveMentionPairs[sieve['name']])
-            print(sieve['name'])
-            print(f'Negative: {len(samples)} Positive: {len(positiveMentionPairs[sieve["name"]])}')
-            print(len(subsampledPairs[sieve['name']]))
         for sieve in sieves:
             trainSieveAndUse(docs, config, subsampledPairs[sieve['name']], subsampledY[sieve['name']], sieve)
 
@@ -212,8 +195,7 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
             difficulties.sort()
             numSamples = int(0.2*len(negativeMentionPairs[sieve['name']]))
             difficultNegatives = []
-            print(f'Len of results: {len(results)}')
-            print(f'Numsamples: {numSamples}')
+
             for i in range(0, numSamples):
                 difficultNegatives.append(negativeMentionPairs[sieve['name']][difficulties[i][1]])
             difficultPairs[sieve['name']] = difficultNegatives + positiveMentionPairs[sieve['name']]
