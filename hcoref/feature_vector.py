@@ -1,4 +1,5 @@
 from preprocessing.document import Mention, Document
+from typing import List
 
 
 def sentenceDistance(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
@@ -168,12 +169,36 @@ def getFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: M
     for feature in features:
         featureVector.append(featureFunction[feature](doc, wordVectors, mention, antecedent, mentionDistance))
     return featureVector
-def getStringFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+
+def mentionDeprel(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.headWordDeprel
+
+def mentionHeadWord(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.headWord
+
+def mentionNextWordPos(doc: Document, mention: Mention, antecedent: Mention) -> str:
     lastId = mention.stanzaIds[-1] # stanza ids start at 1!
     if lastId < len(doc.stanzaAnnotation.sentences[mention.stanzaSentence].words):
-        mentionNextWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[lastId]
-    elif mention.stanzaSentence+1 < len(doc.stanzaAnnotation.sentences):
-        mentionNextWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence+1].words[0]
+        return doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[lastId].upos
+    elif mention.stanzaSentence +1 < len(doc.stanzaAnnotation.sentences):
+        return doc.stanzaAnnotation.sentences[mention.stanzaSentence+1].words[0].upos
     else:
-        mentionNextWord = doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[0] # Should happen rarely, not an actual fix
-    return [mention.features.headWordDeprel, mention.features.headWord, mentionNextWord.upos, mentionNextWord.text]
+        return 'UNDEFINED' # If mention is the last word in the text
+
+def mentionNextWordText(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    lastId = mention.stanzaIds[-1] # stanza ids start at 1!
+    if lastId < len(doc.stanzaAnnotation.sentences[mention.stanzaSentence].words):
+        return doc.stanzaAnnotation.sentences[mention.stanzaSentence].words[lastId].text
+    elif mention.stanzaSentence +1 < len(doc.stanzaAnnotation.sentences):
+        return doc.stanzaAnnotation.sentences[mention.stanzaSentence+1].words[0].text
+    else:
+        return 'UNDEFINED' # If mention is the last word in the text
+
+stringFeatureFunction = {'mentionDeprel': mentionDeprel, 'mentionHeadWord': mentionHeadWord,
+                         'mentionNextWordPos': mentionNextWordPos, 'mentionNextWordText': mentionNextWordText}
+
+def getStringFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int, stringFeatures: List[str]):
+    featureVector = []
+    for feature in stringFeatures:
+        featureVector.append(stringFeatureFunction[feature](doc, mention, antecedent))
+    return featureVector

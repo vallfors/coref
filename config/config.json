@@ -41,5 +41,6 @@
         "antecedentClusterSize", "mentionClusterSize", "exactStringMatch", "identicalHeadWords", 
         "identicalHeadWordsAndProper", "numberMatch", "genderMatch", "naturalGenderMatch",
         "animacyMatch", "nerMatch", "clusterHeadWordMatch", "clusterProperHeadWordMatch",
-        "clusterGenitiveHeadWordMatch", "clusterLemmaHeadWordMatch", "wordvecHeadWordDistance"]
+        "clusterGenitiveHeadWordMatch", "clusterLemmaHeadWordMatch", "wordvecHeadWordDistance"],
+    "stringFeatures": ["mentionDeprel", "mentionHeadWord", "mentionNextWordPos", "mentionNextWordText"]
 }

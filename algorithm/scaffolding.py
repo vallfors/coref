@@ -37,7 +37,7 @@ def useSieve(config: Config, sieve, doc: Document, wordVectors, mention: Mention
     results = []
     for antecedent in antecedents:
         nonStringFeatures = getFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance, config.features)
-        stringFeatures = getStringFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance)
+        stringFeatures = getStringFeatureVector(doc, wordVectors, mention, antecedent, mentionDistance, config.stringFeatures)
         stringFeatures = sieve.encoder.transform([stringFeatures]).toarray()
         featureVector = np.concatenate((nonStringFeatures, stringFeatures[0]), 0)
         mentionDistance += 1

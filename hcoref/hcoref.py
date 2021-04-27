@@ -47,14 +47,14 @@ def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, siev
     stringFeatureVectors = []
     for mp in mentionPairs:
         X.append(getFeatureVector(*mp, config.features))
-        stringFeatureVectors.append(getStringFeatureVector(*mp))
+        stringFeatureVectors.append(getStringFeatureVector(*mp, config.stringFeatures))
     
     encoder = OneHotEncoder(handle_unknown='ignore')
     encoder.fit(stringFeatureVectors)
     stringFeatures = encoder.transform(stringFeatureVectors).toarray()
     X = np.concatenate((X, stringFeatures), 1)
     
-    allFeatureNames = np.concatenate((config.features, encoder.get_feature_names(['mention_deprel', 'mention_headWord', 'mentionNextWordUpos', 'mentionNextWordText'])), 0)
+    allFeatureNames = np.concatenate((config.features, encoder.get_feature_names(config.stringFeatures)), 0)
     
     selectedFeatures = []
     mutualInfo = mutual_info_classif(X, Y, random_state=0)
