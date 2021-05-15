@@ -194,8 +194,34 @@ def mentionNextWordText(doc: Document, mention: Mention, antecedent: Mention) ->
     else:
         return 'UNDEFINED' # If mention is the last word in the text
 
+def antecedentDeprel(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.headWordDeprel
+
+def antecedentHeadWord(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.headWord
+
+def antecedentNextWordPos(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    lastId = antecedent.stanzaIds[-1] # stanza ids start at 1!
+    if lastId < len(doc.stanzaAnnotation.sentences[antecedent.stanzaSentence].words):
+        return doc.stanzaAnnotation.sentences[antecedent.stanzaSentence].words[lastId].upos
+    elif antecedent.stanzaSentence +1 < len(doc.stanzaAnnotation.sentences):
+        return doc.stanzaAnnotation.sentences[antecedent.stanzaSentence+1].words[0].upos
+    else:
+        return 'UNDEFINED' # If mention is the last word in the text
+
+def antecedentNextWordText(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    lastId = antecedent.stanzaIds[-1] # stanza ids start at 1!
+    if lastId < len(doc.stanzaAnnotation.sentences[antecedent.stanzaSentence].words):
+        return doc.stanzaAnnotation.sentences[antecedent.stanzaSentence].words[lastId].text
+    elif antecedent.stanzaSentence +1 < len(doc.stanzaAnnotation.sentences):
+        return doc.stanzaAnnotation.sentences[antecedent.stanzaSentence+1].words[0].text
+    else:
+        return 'UNDEFINED' # If mention is the last word in the text
+
 stringFeatureFunction = {'mentionDeprel': mentionDeprel, 'mentionHeadWord': mentionHeadWord,
-                         'mentionNextWordPos': mentionNextWordPos, 'mentionNextWordText': mentionNextWordText}
+                         'mentionNextWordPos': mentionNextWordPos, 'mentionNextWordText': mentionNextWordText,
+                         'antecedentDeprel': antecedentDeprel, 'antecedentHeadWord': antecedentHeadWord,
+                         'antecedentNextWordPos': antecedentNextWordPos, 'antecedentNextWordText': antecedentNextWordText}
 
 def getStringFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int, stringFeatures: List[str]):
     featureVector = []
