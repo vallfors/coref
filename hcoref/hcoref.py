@@ -124,7 +124,12 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
             mention.predictedCluster = mention.id
         for mention in doc.predictedMentions.values():
             mentionDistance = 0
+            positiveFoundForThisMention = False
             for antecedent in getCandidateAntecedents(doc, mention, maxSentenceDistance):
+                if positiveFoundForThisMention:
+                    break
+                if mention.cluster == antecedent.cluster and mention.cluster != -1:
+                    positiveFoundForThisMention = True
                 sievesMatching = 0
                 for sieve in sieves:
                     if mention.stanzaSentence - antecedent.stanzaSentence >= sieve['sentenceLimit']:
