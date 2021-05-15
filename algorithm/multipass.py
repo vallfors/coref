@@ -77,6 +77,31 @@ def pronounResolution(config: Config, doc: Document, mention: Mention, candidate
     # Sentence distance is at most 3 for pronoun resolution
     if mention.stanzaSentence - candidateAntecedent.stanzaSentence > 3:
         return False
+
+    if mention.features.gender != 'UNKNOWN' and candidateAntecedent.features.gender != 'UNKNOWN':
+        if mention.features.gender != candidateAntecedent.features.gender:
+            return False
+    if mention.features.naturalGender != 'UNKNOWN' and candidateAntecedent.features.naturalGender != 'UNKNOWN':
+        if mention.features.naturalGender != candidateAntecedent.features.naturalGender:
+            return False
+    if mention.features.number != 'UNKNOWN' and candidateAntecedent.features.number != 'UNKNOWN':
+        if mention.features.number != candidateAntecedent.features.number:
+            return False
+    if mention.features.animacy != 'UNKNOWN' and candidateAntecedent.features.animacy != 'UNKNOWN':
+        if mention.features.animacy != candidateAntecedent.features.animacy:
+            return False
+
+    return True
+
+# Pass 10 from Lee et al 2013
+def pronounResolutionWithNerRules(config: Config, doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
+    if mention.features.upos != 'PRON':
+        return False
+    if len(mention.stanzaIds) > 1:
+        return False
+    # Sentence distance is at most 3 for pronoun resolution
+    if mention.stanzaSentence - candidateAntecedent.stanzaSentence > 3:
+        return False
     if mention.features.number == 'SING' and mention.features.animacy == 'ANIMATE':
         if candidateAntecedent.features.nerTag not in ['UNKNOWN', 'PER']:         
             return False
@@ -102,6 +127,67 @@ def pronounResolution(config: Config, doc: Document, mention: Mention, candidate
         if mention.features.animacy != candidateAntecedent.features.animacy:
             return False
 
+    return True
+
+# Pass 10 from Lee et al 2013
+def pronounResolutionClusterBased(config: Config, doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
+    if mention.features.upos != 'PRON':
+        return False
+    if len(mention.stanzaIds) > 1:
+        return False
+    # Sentence distance is at most 3 for pronoun resolution
+    if mention.stanzaSentence - candidateAntecedent.stanzaSentence > 3:
+        return False
+    
+    # Calculate cluster features for the mention
+    mentionNumber = 'UNKNOWN'
+    mentionAnimacy = 'UNKNOWN'
+    mentionNaturalGender = 'UNKNOWN'
+    mentionNerTag = 'UNKNOWN'
+    for mId in doc.predictedClusters[mention.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        if m.features.naturalGender != 'UNKNOWN':
+            mentionNaturalGender = m.features.naturalGender
+        if m.features.number != 'UNKNOWN':
+            mentionNumber = m.features.number
+        if m.features.animacy != 'UNKNOWN':
+            mentionAnimacy = m.features.animacy
+        if m.features.nerTag != 'UNKNOWN':
+            mentionNerTag = m.features.nerTag
+    
+    # Cluster features for the antecedent
+    antecedentNumber = 'UNKNOWN'
+    antecedentAnimacy = 'UNKNOWN'
+    antecedentNaturalGender = 'UNKNOWN'
+    antecedentNerTag = 'UNKNOWN'
+    for m in doc.predictedClusters[candidateAntecedent.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        if m.features.naturalGender != 'UNKNOWN':
+            antecedentNaturalGender = m.features.naturalGender
+        if m.features.number != 'UNKNOWN':
+            antecedentNumber = m.features.number
+        if m.features.animacy != 'UNKNOWN':
+            antecedentAnimacy = m.features.animacy
+        if m.features.nerTag != 'UNKNOWN':
+            antecedentNerTag = m.features.nerTag
+    
+    if mentionNaturalGender != 'UNKNOWN' and antecedentNaturalGender != 'UNKNOWN':
+        if mentionNaturalGender != antecedentNaturalGender:
+            return False
+    if mentionNumber != 'UNKNOWN' and antecedentNumber != 'UNKNOWN':
+        if mentionNumber != antecedentNumber:
+            return False
+    if mentionAnimacy != 'UNKNOWN' and antecedentAnimacy != 'UNKNOWN':
+        if mentionAnimacy != antecedentAnimacy:
+            return False
+    if mentionNerTag != 'UNKNOWN' and antecedentNerTag != 'UNKNOWN':
+        if mentionNerTag != antecedentNerTag:
+            return False
+
+    # Grammatical gender is not cluster based, since the entire cluster does not have to agree
+    if mention.features.gender != 'UNKNOWN' and candidateAntecedent.features.gender != 'UNKNOWN':
+        if mention.features.gender != candidateAntecedent.features.gender:
+            return False
     return True
 
 def genetiveResolution(config: Config, doc: Document, mention: Mention, ca: Mention) -> bool:
@@ -187,7 +273,12 @@ def multiPassSieve(config: Config, doc: Document, sieves):
         doSievePass(config, doc, sieve)
 
 def multiPass(doc: Document, config: Config):
-    sieveMapping = {'exactMatch': exactMatch,'genetiveResolution': genetiveResolution, 'headWordMatch': headWordMatch, 'lemmaHeadWordMatch': lemmaHeadWordMatch, 'pronounResolution': pronounResolution,'wordVectorDistance': wordVectorDistance}
+    sieveMapping = {'exactMatch': exactMatch,'genetiveResolution': genetiveResolution,
+                    'headWordMatch': headWordMatch, 'lemmaHeadWordMatch': lemmaHeadWordMatch, 
+                    'pronounResolution': pronounResolution, 
+                    'pronounResolutionClusterBased': pronounResolutionClusterBased,
+                    'pronounResolutionWithNerRules': pronounResolutionWithNerRules,
+                    'wordVectorDistance': wordVectorDistance}
     sieves = []
     for s in config.multipassSieves:
         if not s in sieveMapping:
