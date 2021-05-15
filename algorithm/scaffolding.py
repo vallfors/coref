@@ -2,6 +2,7 @@ from preprocessing import config
 from preprocessing.document import Document, Mention
 from preprocessing.config import Config
 from hcoref.feature_vector import getFeatureVector, getStringFeatureVector
+from algorithm.candidate_antecedents import getCandidateAntecedents
 
 import operator
 from typing import List
@@ -71,35 +72,10 @@ def link(doc: Document, mention: Mention, antecedent: Mention):
     doc.predictedClusters[antecedentCluster] += doc.predictedClusters[mentionCluster]
     del doc.predictedClusters[mentionCluster]
 
-
-# Returns an ordered list of candidate antecedents for a mention,
-# in the order they should be considered in.
-# TODO: Should use the tree structure for the previous two sentences
-def getCandidateAntecedents(doc: Document, mention: Mention, sieve: Sieve) -> List[Mention]:
-    x = list(doc.predictedMentions.values())
-    x.sort(key=operator.attrgetter('startPos'))
-    antecedents = []
-    for idx, a in enumerate(x):
-        if mention.stanzaSentence - a.stanzaSentence >= sieve.infoDict['sentenceLimit']:
-            continue
-        if a.stanzaSentence >= mention.stanzaSentence:
-            break
-        antecedents.append(a)
-    sameSentence = []
-    while idx < len(x) and x[idx].stanzaSentence == mention.stanzaSentence:
-        if x[idx].id == mention.id:
-            break
-        sameSentence.append(x[idx])
-        idx += 1
-    antecedents.reverse()
-    antecedents = sameSentence + antecedents
-    
-    return antecedents
-
 def doSievePasses(config: Config, doc: Document, wordVectors, sieves: List[Sieve]):
     for sieve in sieves:
         for mention in doc.predictedMentions.values():
-            candidateAntecedents = getCandidateAntecedents(doc, mention, sieve)
+            candidateAntecedents = getCandidateAntecedents(config, doc, mention, sieve.infoDict['sentenceLimit'])
             bestAntecedent = useSieve(config, sieve, doc, wordVectors, mention, candidateAntecedents)
             if bestAntecedent != None:
                 link(doc, mention, bestAntecedent)

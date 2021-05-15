@@ -25,6 +25,8 @@ class Config:
     useSubsampling: bool
     features: List[str]
     stringFeatures: List[str]
+    allowIndefiniteAnaphor: bool
+    orderAntecedentsBySubject: bool
 
     def __init__(self, filename: str):
         with open(filename) as f:
@@ -37,6 +39,7 @@ class Config:
             self.docId = configDict['docId']
         if configDict['algorithm'] == 'multipass':
             self.multipassSieves = configDict['multipassSieves']
+            self.allowIndefiniteAnaphor = configDict['allowIndefiniteAnaphor']
         if configDict['algorithm'] == 'hcoref':
             self.scaffoldingSieves = configDict['scaffoldingSieves']
             self.debugFeatureSelection = configDict['debugFeatureSelection']
@@ -53,3 +56,4 @@ class Config:
             self.useSubsampling = configDict['useSubsampling']
         self.wordVectorFile = configDict['wordVectorFile']
         self.wordVectors = KeyedVectors.load_word2vec_format(self.wordVectorFile, binary=True)
+        self.orderAntecedentsBySubject = configDict['orderAntecedentsBySubject']

@@ -1,8 +1,9 @@
 from preprocessing.document import Document, Mention
 from preprocessing.config import Config
+from algorithm.candidate_antecedents import getCandidateAntecedents
 
-import operator
 from typing import List
+import operator
 
 # Pass 2 from Lee et al 2013
 def exactMatch(config: Config, doc: Document, mention: Mention, candidateAntecedent: Mention) -> bool:
@@ -227,34 +228,10 @@ def link(doc: Document, mention: Mention, antecedent: Mention):
     doc.predictedClusters[antecedentCluster] += doc.predictedClusters[mentionCluster]
     del doc.predictedClusters[mentionCluster]
 
-
-# Returns an ordered list of candidate antecedents for a mention,
-# in the order they should be considered in.
-# TODO: Should use the tree structure for the previous two sentences
-def getCandidateAntecedents(doc: Document, mention:Mention) -> List[Mention]:
-    
-    x = list(doc.predictedMentions.values())
-    x.sort(key=operator.attrgetter('startPos'))
-    antecedents = []
-    for idx, a in enumerate(x):
-        if a.stanzaSentence >= mention.stanzaSentence:
-            break
-        antecedents.append(a)
-    sameSentence = []
-    while idx < len(x) and x[idx].stanzaSentence == mention.stanzaSentence:
-        if x[idx].id == mention.id:
-            break
-        sameSentence.append(x[idx])
-        idx += 1
-    antecedents.reverse()
-    antecedents = sameSentence + antecedents
-    
-    return antecedents
-
 # Takes first possible antecedent that satisfies the sieve. Return value indicates whether any
 # antecedent was found.
 def pickAntecedent(config: Config, doc: Document, sieve,  mention: Mention) -> bool:
-    for antecedent in getCandidateAntecedents(doc, mention):
+    for antecedent in getCandidateAntecedents(config, doc, mention, 10000):
         if sieve(config, doc, mention, antecedent):
             link(doc, mention, antecedent)
             return True
@@ -263,6 +240,13 @@ def pickAntecedent(config: Config, doc: Document, sieve,  mention: Mention) -> b
 def doSievePass(config: Config, doc: Document, sieve):
     newEligibleMentions = []
     for mention in doc.eligibleMentions:
+        if not config.allowIndefiniteAnaphor:
+            if mention.features.upos == 'PRON' and mention.features.definite == 'IND':
+                print("Indef pron: " + mention.text)
+                continue
+            if mention.text[:2] == 'en' or mention.text[:3] == 'ett':
+                print("Indef noun: " + mention.text)
+                continue
         antecedentFound = pickAntecedent(config, doc, sieve, mention)
         if not antecedentFound:
             newEligibleMentions.append(mention)

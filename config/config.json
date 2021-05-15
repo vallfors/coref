@@ -5,21 +5,21 @@
         {
             "name": "proper",
             "sentenceLimit": 15,
-            "threshold": 0.15,
+            "threshold": 0.3,
             "mentionPos": "PROPN",
             "antecedentPos": "PROPN"
         },
         {
             "name": "common",
             "sentenceLimit": 15,
-            "threshold": 0.15,
+            "threshold": 0.3,
             "mentionPos": "NOUN",
             "antecedentPos": "NOUN"
         },
         {
             "name": "pronoun",
             "sentenceLimit": 15,
-            "threshold": 0.15,
+            "threshold": 0.2,
             "mentionPos": "PRON",
             "antecedentPos": "ANY"
         }
@@ -37,10 +37,12 @@
     "minimalMutualInformation": 0.0001,
     "allowedFeatureRarity": 30,
     "useSubsampling": false,
+    "orderAntecedentsBySubject": false,
     "features": ["sentenceDistance", "mentionDistance", "minimumClusterDistance",
         "antecedentClusterSize", "mentionClusterSize", "exactStringMatch", "identicalHeadWords", 
         "identicalHeadWordsAndProper", "numberMatch", "genderMatch", "naturalGenderMatch",
         "animacyMatch", "nerMatch", "clusterHeadWordMatch", "clusterProperHeadWordMatch",
         "clusterGenitiveHeadWordMatch", "clusterLemmaHeadWordMatch", "wordvecHeadWordDistance"],
-    "stringFeatures": ["mentionDeprel", "mentionHeadWord", "mentionNextWordPos", "mentionNextWordText"]
+    "stringFeatures": ["mentionDeprel", "mentionHeadWord", "mentionNextWordPos", "mentionNextWordText",
+                       "antecedentDeprel", "antecedentHeadWord", "antecedentNextWordPos", "antecedentNextWordText"]
 }

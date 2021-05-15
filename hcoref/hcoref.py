@@ -14,29 +14,7 @@ from preprocessing.document import Mention, Document
 from preprocessing.config import Config
 from hcoref.feature_vector import getFeatureVector, getStringFeatureVector
 from algorithm.scaffolding import doSievePasses, Sieve, useSieve
-
-# Returns an ordered list of candidate antecedents for a mention,
-# in the order they should be considered in.
-def getCandidateAntecedents(doc: Document, mention: Mention, maxSentenceDistance: int) -> List[Mention]:
-    x = list(doc.predictedMentions.values())
-    x.sort(key=operator.attrgetter('startPos'))
-    antecedents = []
-    for idx, a in enumerate(x):
-        if a.stanzaSentence >= mention.stanzaSentence:
-            break
-        if mention.stanzaSentence - a.stanzaSentence >= maxSentenceDistance:
-            continue
-        antecedents.append(a)
-    sameSentence = []
-    while idx < len(x) and x[idx].stanzaSentence == mention.stanzaSentence:
-        if x[idx].id == mention.id:
-            break
-        sameSentence.append(x[idx])
-        idx += 1
-    antecedents.reverse()
-    antecedents = sameSentence + antecedents
-    
-    return antecedents
+from algorithm.candidate_antecedents import getCandidateAntecedents
 
 def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, sieve):
     if config.maxDepth == -1: # No max depth
@@ -125,7 +103,7 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
         for mention in doc.predictedMentions.values():
             mentionDistance = 0
             positiveFoundForThisMention = False
-            for antecedent in getCandidateAntecedents(doc, mention, maxSentenceDistance):
+            for antecedent in getCandidateAntecedents(config, doc, mention, maxSentenceDistance):
                 if positiveFoundForThisMention:
                     break
                 if mention.cluster == antecedent.cluster and mention.cluster != -1:

@@ -2,6 +2,7 @@
     "useGoldMentions": false,
     "algorithm": "multipass",
     "multipassSieves": ["exactMatch", "genetiveResolution", "pronounResolution"],
+    "orderAntecedentsBySubject": true,
     "inputFile": "./data/textinator/devfromtrain.json",
     "useAllDocs": false,
     "docId": 0,
