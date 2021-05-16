@@ -91,6 +91,9 @@ def pronounResolution(config: Config, doc: Document, mention: Mention, candidate
     if mention.features.animacy != 'UNKNOWN' and candidateAntecedent.features.animacy != 'UNKNOWN':
         if mention.features.animacy != candidateAntecedent.features.animacy:
             return False
+    if mention.features.person != 'UNKNOWN' and candidateAntecedent.features.person != 'UNKNOWN':
+        if mention.features.person != candidateAntecedent.features.person:
+            return False
 
     return True
 
@@ -126,6 +129,9 @@ def pronounResolutionWithNerRules(config: Config, doc: Document, mention: Mentio
             return False
     if mention.features.animacy != 'UNKNOWN' and candidateAntecedent.features.animacy != 'UNKNOWN':
         if mention.features.animacy != candidateAntecedent.features.animacy:
+            return False
+    if mention.features.person != 'UNKNOWN' and candidateAntecedent.features.person != 'UNKNOWN':
+        if mention.features.person != candidateAntecedent.features.person:
             return False
 
     return True

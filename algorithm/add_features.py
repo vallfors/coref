@@ -3,13 +3,24 @@ from typing import Dict
 from algorithm.features import Features
 from preprocessing.document import Document, Mention
 
-animatePronouns = ['han', 'hon', 'jag', 'honom', 'henne', 'hans', 'hennes', 'min', 'mitt', 'din', 'ditt', 'er', 'ert', 'eran', 'vår', 'våran', 'vårt', 'ni', 'vi']
 animateNerTags = ['PER', 'ORG']
 inanimateNerTags = ['TME', 'LOC', 'EVN']
+animatePronouns = ['jag', 'mig', 'min', 'mitt', 'mina', 'du', 'dig', 'din', 'ditt', 'dina', 'han',
+                    'honom', 'hans', 'hon', 'henne', 'hennes','ni', 'er', 'ert', 'era', 'vi',
+                    'oss', 'vår', 'vårt', 'våra', 'ni', 'er', 'ert', 'era']
 
-singularPronouns = ['han', 'hon', 'jag', 'du', 'honom', 'henne', 'hans', 'hennes', 'dess', 'din', 'ditt', 'min', 'mitt']
-pluralPronouns = ['deras', 'vår', 'våran', 'vårt', 'vi', 'de', 'dem']
-pluralOrSingularPronouns = ['sin', 'sig', 'er', 'ert', 'eran', 'ni']
+singularPronouns = ['jag', 'mig', 'min', 'mitt', 'mina', 'du', 'dig', 'din', 'ditt', 'dina', 'han',
+                    'honom', 'hans', 'hon', 'henne', 'hennes', 'den', 'dess', 'det', 'man', 'en', 'ens',
+                    'sig', 'sin', 'sitt', 'sina', 'ni', 'er', 'ert', 'era']
+
+pluralPronouns = ['vi', 'oss', 'vår', 'vårt', 'våra', 'ni', 'er', 'ert', 'era', 'de', 'dem', 'deras',
+                  'sig', 'sin', 'sitt', 'sina']
+                  
+
+firstPersonPronouns = ['jag', 'mig', 'min', 'mitt', 'mina', 'vi', 'oss', 'vår', 'vårt', 'våra']
+secondPersonPronouns = ['du', 'dig', 'din', 'ditt', 'dina',	'ni', 'er', 'ert', 'era']
+thirdPersonPronouns = ['han', 'honom', 'hans', 'de', 'dem', 'deras','hon', 'henne', 'hennes',
+                        'den', 'dess', 'det', 'man', 'en', 'ens', 'sig', 'sin', 'sitt', 'sina']
 
 def extractAnimacy(headWord, nerTag):
     if headWord.text in animatePronouns:
@@ -38,12 +49,13 @@ def extractGender(headWord):
     return 'UNKNOWN'
 
 def extractNumber(headWord, nerTag):
+    if headWord.text in singularPronouns and headWord.text in pluralPronouns:
+        return 'UNKNOWN'
     if headWord.text in singularPronouns:
         return 'SIN'
     if headWord.text in pluralPronouns:
         return 'PLU'
-    if headWord.text in pluralOrSingularPronouns:
-        return 'UNKNOWN'
+    
     if nerTag in ['ORG']:
         return 'UNKNOWN' # Organizations can be referred to both by plural and singular references
     if 'SIN' in headWord.xpos and 'PLU' in headWord.xpos:
@@ -61,6 +73,15 @@ def extractDefiniteness(headWord):
         return 'IND'
     else:
         return 'UNKNOWN'
+
+def extractPerson(headWord):
+    if headWord.text in firstPersonPronouns:
+        return 'first'
+    if headWord.text in secondPersonPronouns:
+        return 'second'
+    if headWord.text in thirdPersonPronouns:
+        return 'third'
+    return 'UNKNOWN'
 
 def addFeaturesToMentionDict(doc: Document, nerPipeline, mentions: Dict[int, Mention]):
     for mention in mentions.values():
@@ -96,6 +117,7 @@ def addFeaturesToMentionDict(doc: Document, nerPipeline, mentions: Dict[int, Men
         mention.features.naturalGender = extractNaturalGender(headWord)
         mention.features.gender = extractGender(headWord)
         mention.features.definite = extractDefiniteness(headWord)
+        mention.features.person = extractPerson(headWord)
 
 def addFeatures(doc: Document, nerPipeline):
     addFeaturesToMentionDict(doc, nerPipeline, doc.goldMentions)
