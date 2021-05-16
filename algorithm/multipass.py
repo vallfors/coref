@@ -147,49 +147,60 @@ def pronounResolutionClusterBased(config: Config, doc: Document, mention: Mentio
         return False
     
     # Calculate cluster features for the mention
-    mentionNumber = 'UNKNOWN'
-    mentionAnimacy = 'UNKNOWN'
-    mentionNaturalGender = 'UNKNOWN'
-    mentionNerTag = 'UNKNOWN'
+    mentionNumber = set()
+    mentionAnimacy = set()
+    mentionNaturalGender = set()
+    mentionNerTag = set()
+    mentionPerson = set()
     for mId in doc.predictedClusters[mention.predictedCluster]:
         m = doc.predictedMentions[mId]
-        if m.features.naturalGender != 'UNKNOWN':
-            mentionNaturalGender = m.features.naturalGender
-        if m.features.number != 'UNKNOWN':
-            mentionNumber = m.features.number
-        if m.features.animacy != 'UNKNOWN':
-            mentionAnimacy = m.features.animacy
-        if m.features.nerTag != 'UNKNOWN':
-            mentionNerTag = m.features.nerTag
+        mentionNumber.add(m.features.number)
+        mentionNaturalGender.add(m.features.naturalGender)
+        mentionAnimacy.add(m.features.animacy)
+        mentionNerTag.add(m.features.nerTag)
+        mentionPerson.add(m.features.person)
+    
+    mentionNumber.discard('UNKNOWN')
+    mentionAnimacy.discard('UNKNOWN')
+    mentionNaturalGender.discard('UNKNOWN')
+    mentionNerTag.discard('UNKNOWN')
+    mentionPerson.discard('UNKNOWN')
     
     # Cluster features for the antecedent
-    antecedentNumber = 'UNKNOWN'
-    antecedentAnimacy = 'UNKNOWN'
-    antecedentNaturalGender = 'UNKNOWN'
-    antecedentNerTag = 'UNKNOWN'
-    for m in doc.predictedClusters[candidateAntecedent.predictedCluster]:
+    antecedentNumber = set()
+    antecedentAnimacy = set()
+    antecedentNaturalGender = set()
+    antecedentNerTag = set()
+    antecedentPerson = set()
+    for mId in doc.predictedClusters[candidateAntecedent.predictedCluster]:
         m = doc.predictedMentions[mId]
-        if m.features.naturalGender != 'UNKNOWN':
-            antecedentNaturalGender = m.features.naturalGender
-        if m.features.number != 'UNKNOWN':
-            antecedentNumber = m.features.number
-        if m.features.animacy != 'UNKNOWN':
-            antecedentAnimacy = m.features.animacy
-        if m.features.nerTag != 'UNKNOWN':
-            antecedentNerTag = m.features.nerTag
+        antecedentNumber.add(m.features.number)
+        antecedentNaturalGender.add(m.features.naturalGender)
+        antecedentAnimacy.add(m.features.animacy)
+        antecedentNerTag.add(m.features.nerTag)
+        antecedentPerson.add(m.features.person)
+    antecedentNumber.discard('UNKNOWN')
+    antecedentAnimacy.discard('UNKNOWN')
+    antecedentNaturalGender.discard('UNKNOWN')
+    antecedentNerTag.discard('UNKNOWN')
+    antecedentPerson.discard('UNKNOWN')
     
-    if mentionNaturalGender != 'UNKNOWN' and antecedentNaturalGender != 'UNKNOWN':
-        if mentionNaturalGender != antecedentNaturalGender:
+    if len(mentionNumber) > 0 and len(antecedentNumber) > 0:
+        if len(mentionNumber.intersection(antecedentNumber)) < 1:
             return False
-    if mentionNumber != 'UNKNOWN' and antecedentNumber != 'UNKNOWN':
-        if mentionNumber != antecedentNumber:
+    if len(mentionAnimacy) > 0 and len(antecedentAnimacy) > 0:
+        if len(mentionAnimacy.intersection(antecedentAnimacy)) < 1:
             return False
-    if mentionAnimacy != 'UNKNOWN' and antecedentAnimacy != 'UNKNOWN':
-        if mentionAnimacy != antecedentAnimacy:
+    if len(mentionNaturalGender) > 0 and len(antecedentNaturalGender) > 0:
+        if len(mentionNaturalGender.intersection(antecedentNaturalGender)) < 1:
             return False
-    if mentionNerTag != 'UNKNOWN' and antecedentNerTag != 'UNKNOWN':
-        if mentionNerTag != antecedentNerTag:
+    if len(mentionNerTag) > 0 and len(antecedentNerTag) > 0:
+        if len(mentionNerTag.intersection(antecedentNerTag)) < 1:
             return False
+    if len(mentionPerson) > 0 and len(antecedentPerson) > 0:
+        if len(mentionPerson.intersection(antecedentPerson)) < 1:
+            return False
+    
 
     # Grammatical gender is not cluster based, since the entire cluster does not have to agree
     if mention.features.gender != 'UNKNOWN' and candidateAntecedent.features.gender != 'UNKNOWN':
