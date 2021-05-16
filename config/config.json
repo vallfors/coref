@@ -7,21 +7,24 @@
             "sentenceLimit": 15,
             "threshold": 0.3,
             "mentionPos": "PROPN",
-            "antecedentPos": "PROPN"
+            "antecedentPos": "PROPN",
+            "subsample": true
         },
         {
             "name": "common",
             "sentenceLimit": 15,
             "threshold": 0.3,
             "mentionPos": "NOUN",
-            "antecedentPos": "NOUN"
+            "antecedentPos": "NOUN",
+            "subsample": true
         },
         {
             "name": "pronoun",
             "sentenceLimit": 15,
             "threshold": 0.2,
             "mentionPos": "PRON",
-            "antecedentPos": "ANY"
+            "antecedentPos": "ANY",
+            "subsample": false
         }
     ],
     "inputFile": "./data/textinator/devfromtrain.json",

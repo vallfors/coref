@@ -119,8 +119,7 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
                             else:
                                 negativeMentionPairs[sieve['name']].append((doc, wordVectors, mention, antecedent, mentionDistance))
                             sievesMatching += 1
-                if sievesMatching > 0: # This check makes it perform better, but I don't know why
-                    mentionDistance += 1
+                mentionDistance += 1
 
     if not config.useSubsampling:
         for sieve in sieves:
@@ -134,8 +133,11 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
         subsampledPairs = {}
         random.seed(0)
         for sieve in sieves:
-            numSamples = int(0.2*len(negativeMentionPairs[sieve['name']])) 
-            samples = random.sample(negativeMentionPairs[sieve['name']], numSamples)
+            if sieve['subsample']:
+                numSamples = int(0.2*len(negativeMentionPairs[sieve['name']])) 
+                samples = random.sample(negativeMentionPairs[sieve['name']], numSamples)
+            else:
+                samples = negativeMentionPairs[sieve['name']]
             subsampledPairs[sieve['name']] = samples + positiveMentionPairs[sieve['name']]
             subsampledY[sieve['name']] = [0] * len(samples) + [1] * len(positiveMentionPairs[sieve['name']])
         for sieve in sieves:
@@ -158,8 +160,8 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
             selectedFeatures = joblib.load(f'models/{name}SelectedFeatures.joblib')
             featureVectors = []
             for mentionPair in negativeMentionPairs[sieve['name']]:
-                nonStringFeatures = getFeatureVector(*mentionPair)
-                stringFeatures = getStringFeatureVector(*mentionPair)
+                nonStringFeatures = getFeatureVector(*mentionPair, config.features)
+                stringFeatures = getStringFeatureVector(*mentionPair, config.stringFeatures)
                 stringFeatures = encoder.transform([stringFeatures]).toarray()
                 featureVector = np.concatenate((nonStringFeatures, stringFeatures[0]), 0)
                 featuresToUse = []
@@ -176,6 +178,9 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
 
             for i in range(0, numSamples):
                 difficultNegatives.append(negativeMentionPairs[sieve['name']][difficulties[i][1]])
+            
+            if not sieve['subsample']:
+                difficultNegatives = negativeMentionPairs[sieve['name']]
             difficultPairs[sieve['name']] = difficultNegatives + positiveMentionPairs[sieve['name']]
             difficultY[sieve['name']] = [0] * len(difficultNegatives) + [1] * len(positiveMentionPairs[sieve['name']])
         for sieve in sieves:
