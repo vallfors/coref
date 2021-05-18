@@ -2,6 +2,7 @@ from typing import Dict, List
 import stanza
 import json
 import os
+from collections import defaultdict
 
 from preprocessing.read_conll import CoNLLFile, loadFromFile
 from algorithm.features import Features
@@ -185,3 +186,85 @@ def getDocumentFromFile(filename: str) -> Document:
         return documentsFromTextinatorFile(filename)[0]
     else:
         raise Exception('Invalid file extension of document file')
+
+def printStatistics(docs: List[Document]):
+    totalMentions = 0
+    totalClusters = 0
+    clusterSizes = defaultdict(int)
+    mentionWordCounts = defaultdict(int)
+    clusterSpread = defaultdict(int)
+    distanceBetween = defaultdict(int)
+    posWords = {}
+    posAntecedentDistances = {}
+    phraseCount = defaultdict(int)
+    for doc in docs:
+        totalMentions += len(doc.goldMentions)
+        totalClusters += len(doc.goldClusters)
+        for cluster in doc.goldClusters.values():
+            clusterSizes[len(cluster)] += 1
+            start = 100000
+            end = 0
+            sortedMentions = []
+            for mentionId in cluster:
+                mention = doc.goldMentions[mentionId]
+                sortedMentions.append((mention.stanzaSentence, mention))
+                start = min(mention.stanzaSentence, start)
+                end = max(mention.stanzaSentence, end)
+            clusterSpread[end-start] +=1
+            sortedMentions.sort(key=lambda x: x[0])
+            # Calculate distance to closest coreferent mention
+            oldSentence = -1
+            for (sentence, mention) in sortedMentions:
+                if oldSentence != -1:
+                    distanceBetween[sentence-oldSentence] += 1
+
+                    if mention.features.upos not in posAntecedentDistances:
+                        posAntecedentDistances[mention.features.upos] = defaultdict(int)
+                    posAntecedentDistances[mention.features.upos][sentence-oldSentence] += 1
+                
+                oldSentence = sentence
+
+        # Mention statistics
+        for mention in doc.goldMentions.values():
+            phraseCount[mention.text] += 1
+            mentionWordCounts[len(mention.stanzaIds)] += 1
+            if mention.features.upos not in posWords:
+                posWords[mention.features.upos] = defaultdict(int)
+            posWords[mention.features.upos][len(mention.stanzaIds)] += 1
+    print(f'Total number of mentions: {totalMentions}')
+    print(f'Total number of clusters: {totalClusters}')
+
+    print('Number of words in mentions:')
+    for key, value in sorted(mentionWordCounts.items()):
+        print(f'({key}, {value})')
+
+    print('Number of words in mentions, divided by upos tag')
+    for pos, counts in posWords.items():
+        print(pos)
+        for key, value in sorted(counts.items()):
+            print(f'({key}, {value})')
+
+    print('Cluster sizes:')
+    for key, value in sorted(clusterSizes.items()):
+        print(f'({key}, {value})')
+    
+    print('Cluster spread:')
+    for key, value in sorted(clusterSpread.items()):
+        print(f'({key}, {value})')
+
+    print('Anaphor-antecedent distances:')
+    for key, value in sorted(distanceBetween.items()):
+        print(f'({key}, {value})')
+    
+    print('Anaphor-antecedent distances per POS:')
+    for pos, counts in posAntecedentDistances.items():
+        print(pos)
+        for key, value in sorted(counts.items()):
+            print(f'({key}, {value})')
+    print('Most common words')
+    cnt = 0
+    for count, phrase in sorted(phraseCount.items(), key=lambda item: item[1], reverse=True):
+        print(f'{count}: {phrase}')
+        cnt+=1
+        if cnt > 10:
+            break
