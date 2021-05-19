@@ -27,17 +27,19 @@ def addStanzaLinksToGoldMentions(doc: Document):
         else:
             mention.stanzaSentence = positionToSentence[mention.startPos]
         mention.stanzaIds = []
+        lastWordEndPos = -1
         for word in doc.stanzaAnnotation.sentences[mention.stanzaSentence].words:
             wordStartPos = int(word.misc.split('|')[0].split('=')[1])
             wordEndPos = int(word.misc.split('|')[1].split('=')[1])
             if wordStartPos >= mention.startPos and wordEndPos <= mention.endPos:
                 mention.stanzaIds.append(word.id)
-        if len(mention.stanzaIds) == 0:
+                lastWordEndPos = wordEndPos
+        if len(mention.stanzaIds) == 0 or lastWordEndPos != mention.endPos:
             broken.append((mention.id, mention.cluster))
     if len(broken) > 0:
         print('WARNING! Some gold mentions do not match token limits:')
     for t in broken:
         (mentionId, clusterId) = t
         print(doc.goldMentions[mentionId].text)
-        doc.goldClusters[clusterId].remove(mentionId)
-        del doc.goldMentions[mentionId]
+        doc.goldMentions[mentionId].stanzaIds = [1]
+        doc.goldMentions[mentionId].stanzaSentence = len(doc.stanzaAnnotation.sentences)-1

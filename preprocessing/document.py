@@ -148,6 +148,7 @@ def documentsFromTextinatorFile(filename: str) -> List[Document]:
     for jsonDocument in jsonData['data']:
         doc = Document()
         doc.text = jsonDocument['context']
+        doc.text += '. DUMMYTOKEN'
         doc.docName = 'textinator' + str(counter)
         counter+=1
         # Assign id:s to mentions and clusters and add them to the document
