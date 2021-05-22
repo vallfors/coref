@@ -32,6 +32,124 @@ def genderMatch(doc: Document, wordVectors, mention: Mention, antecedent: Mentio
             value = 0
     return value
 
+def personMatch(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    value = 0.5
+    if mention.features.person != 'UNKNOWN' and antecedent.features.person != 'UNKNOWN':
+        value = 1
+        if mention.features.person != antecedent.features.person:
+            value = 0
+    return value
+
+def numberMatchClusterBased(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    # Calculate cluster features for the mention
+    mentionNumber = set()
+    for mId in doc.predictedClusters[mention.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        mentionNumber.add(m.features.number)
+    mentionNumber.discard('UNKNOWN')
+    
+    # Cluster features for the antecedent
+    antecedentNumber = set()
+
+    for mId in doc.predictedClusters[antecedent.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        antecedentNumber.add(m.features.number)
+    antecedentNumber.discard('UNKNOWN')
+
+    if len(mentionNumber) > 0 and len(antecedentNumber) > 0:
+        if len(mentionNumber.intersection(antecedentNumber)) < 1:
+            return 0
+        return 1
+    return 0.5
+
+def genderMatchClusterBased(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    # Calculate cluster features for the mention
+    mentionAttribute = set()
+    for mId in doc.predictedClusters[mention.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        mentionAttribute.add(m.features.gender)
+    mentionAttribute.discard('UNKNOWN')
+    
+    # Cluster features for the antecedent
+    antecedentAttribute = set()
+
+    for mId in doc.predictedClusters[antecedent.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        antecedentAttribute.add(m.features.gender)
+    antecedentAttribute.discard('UNKNOWN')
+
+    if len(mentionAttribute) > 0 and len(antecedentAttribute) > 0:
+        if len(mentionAttribute.intersection(antecedentAttribute)) < 1:
+            return 0
+        return 1
+    return 0.5
+
+def animacyMatchClusterBased(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    # Calculate cluster features for the mention
+    mentionAttribute = set()
+    for mId in doc.predictedClusters[mention.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        mentionAttribute.add(m.features.animacy)
+    mentionAttribute.discard('UNKNOWN')
+    
+    # Cluster features for the antecedent
+    antecedentAttribute = set()
+
+    for mId in doc.predictedClusters[antecedent.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        antecedentAttribute.add(m.features.animacy)
+    antecedentAttribute.discard('UNKNOWN')
+
+    if len(mentionAttribute) > 0 and len(antecedentAttribute) > 0:
+        if len(mentionAttribute.intersection(antecedentAttribute)) < 1:
+            return 0
+        return 1
+    return 0.5
+
+def personMatchClusterBased(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    # Calculate cluster features for the mention
+    mentionAttribute = set()
+    for mId in doc.predictedClusters[mention.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        mentionAttribute.add(m.features.person)
+    mentionAttribute.discard('UNKNOWN')
+    
+    # Cluster features for the antecedent
+    antecedentAttribute = set()
+
+    for mId in doc.predictedClusters[antecedent.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        antecedentAttribute.add(m.features.person)
+    antecedentAttribute.discard('UNKNOWN')
+
+    if len(mentionAttribute) > 0 and len(antecedentAttribute) > 0:
+        if len(mentionAttribute.intersection(antecedentAttribute)) < 1:
+            return 0
+        return 1
+    return 0.5
+
+def nerMatchClusterBased(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    # Calculate cluster features for the mention
+    mentionAttribute = set()
+    for mId in doc.predictedClusters[mention.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        mentionAttribute.add(m.features.nerTag)
+    mentionAttribute.discard('UNKNOWN')
+    
+    # Cluster features for the antecedent
+    antecedentAttribute = set()
+
+    for mId in doc.predictedClusters[antecedent.predictedCluster]:
+        m = doc.predictedMentions[mId]
+        antecedentAttribute.add(m.features.nerTag)
+    antecedentAttribute.discard('UNKNOWN')
+
+    if len(mentionAttribute) > 0 and len(antecedentAttribute) > 0:
+        if len(mentionAttribute.intersection(antecedentAttribute)) < 1:
+            return 0
+        return 1
+    return 0.5
+
 def naturalGenderMatch(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
     value = 0.5
     if mention.features.naturalGender != 'UNKNOWN' and antecedent.features.naturalGender != 'UNKNOWN':
@@ -154,6 +272,49 @@ def clusterGenitiveHeadWordMatch(doc: Document, wordVectors, mention: Mention, a
                 return True
     return False
 
+def iWithinIClusterCheck(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    mentionCluster = doc.predictedClusters[mention.predictedCluster]
+    antecedentCluster = doc.predictedClusters[antecedent.predictedCluster]
+    for id in mentionCluster:
+        m = doc.predictedMentions[id]
+        for antecedentId in antecedentCluster:
+            a = doc.predictedMentions[antecedentId]
+            if m.stanzaSentence != a.stanzaSentence:
+                continue
+            aFirst = a.stanzaIds[0]
+            aLast = a.stanzaIds[-1]
+            mFirst = m.stanzaIds[0]
+            mLast = m.stanzaIds[-1]
+            if aFirst >= mFirst and aLast <= mLast:
+                return True
+            if mFirst >= aFirst and mLast <= aLast:
+                return True
+    return False
+
+    
+# From Hybrid method (Nilsson 2010)
+
+def antecedentFirstInSentence(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    return antecedent.stanzaIds[0] == 1
+
+def anaphorFirstInSentence(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    return mention.stanzaIds[0] == 1
+
+def dependentOnSame(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    if mention.stanzaSentence != antecedent.stanzaSentence:
+        return False
+    if mention.features.headWordHead == antecedent.features.headWordHead:
+        return True
+    return False
+
+def anaphorLength(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    return len(mention.stanzaIds)
+
+def antecedentLength(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    return len(antecedent.stanzaIds)
+
+
+
 featureFunction = {'sentenceDistance': sentenceDistance, 'identicalHeadWords': identicalHeadWords,
                     'identicalHeadWordsAndProper': identicalHeadWordsAndProper, 'exactStringMatch': exactStringMatch,
                     'genderMatch': genderMatch, 'naturalGenderMatch': naturalGenderMatch,
@@ -162,7 +323,10 @@ featureFunction = {'sentenceDistance': sentenceDistance, 'identicalHeadWords': i
                     'wordvecHeadWordDistance': wordvecHeadWordDistance, 'minimumClusterDistance': minimumClusterDistance,
                     'mentionClusterSize': mentionClusterSize, 'antecedentClusterSize': antecedentClusterSize,
                     'clusterHeadWordMatch': clusterHeadWordMatch, 'clusterProperHeadWordMatch': clusterProperHeadWordMatch,
-                    'clusterLemmaHeadWordMatch': clusterLemmaHeadWordMatch, 'clusterGenitiveHeadWordMatch': clusterGenitiveHeadWordMatch}
+                    'clusterLemmaHeadWordMatch': clusterLemmaHeadWordMatch, 'clusterGenitiveHeadWordMatch': clusterGenitiveHeadWordMatch,
+                    'antecedentFirstInSentence': antecedentFirstInSentence,'anaphorFirstInSentence':anaphorFirstInSentence, 'dependentOnSame': dependentOnSame,
+                    'antecedentLength': antecedentLength,'anaphorLength': anaphorLength,'numberMatchClusterBased':numberMatchClusterBased,'personMatch': personMatch,
+                    'nerMatchClusterBased':nerMatchClusterBased,'personMatchClusterBased': personMatchClusterBased,'genderMatchClusterBased': genderMatchClusterBased,'animacyMatchClusterBased': animacyMatchClusterBased,'iWithinIClusterCheck': iWithinIClusterCheck}
 
 def getFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int, features):
     featureVector = []
@@ -174,7 +338,7 @@ def mentionDeprel(doc: Document, mention: Mention, antecedent: Mention) -> str:
     return mention.features.headWordDeprel
 
 def mentionHeadWord(doc: Document, mention: Mention, antecedent: Mention) -> str:
-    return mention.features.headWord
+    return mention.features.headWord #obs fel
 
 def mentionNextWordPos(doc: Document, mention: Mention, antecedent: Mention) -> str:
     lastId = mention.stanzaIds[-1] # stanza ids start at 1!
@@ -218,10 +382,79 @@ def antecedentNextWordText(doc: Document, mention: Mention, antecedent: Mention)
     else:
         return 'UNDEFINED' # If mention is the last word in the text
 
+# From Hybrid method (Nilsson 2010)
+def antecedentGrammaticalGender(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.gender
+
+def anaphorGrammaticalGender(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.gender
+    
+def anaphorDefiniteness(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.definite
+
+def antecedentDefiniteness(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.definite
+
+def anaphorPronounType(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.pronounType
+
+def antecedentPronounType(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.pronounType
+
+def anaphorCase(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.case
+
+def antecedentCase(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.case
+
+def anaphorAnimacy(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.animacy
+
+def antecedentAnimacy(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.animacy
+
+def anaphorNaturalGender(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.naturalGender
+
+def antecedentNaturalGender(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.naturalGender
+
+def anaphorNerTag(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.nerTag
+
+def antecedentNerTag(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.nerTag
+
+def anaphorPerson(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.person
+
+def antecedentPerson(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.person
+
+def anaphorNumber(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return mention.features.number
+
+def antecedentNumber(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    return antecedent.features.number
+
+def antecedentPronounText(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    if antecedent.features.upos != 'PRON':
+        return 'UNDEFINED'
+    return antecedent.text
+
+def anaphorPronounText(doc: Document, mention: Mention, antecedent: Mention) -> str:
+    if mention.features.upos != 'PRON':
+        return 'UNDEFINED'
+    return mention.text
+
 stringFeatureFunction = {'mentionDeprel': mentionDeprel, 'mentionHeadWord': mentionHeadWord,
                          'mentionNextWordPos': mentionNextWordPos, 'mentionNextWordText': mentionNextWordText,
                          'antecedentDeprel': antecedentDeprel, 'antecedentHeadWord': antecedentHeadWord,
-                         'antecedentNextWordPos': antecedentNextWordPos, 'antecedentNextWordText': antecedentNextWordText}
+                         'antecedentNextWordPos': antecedentNextWordPos, 'antecedentNextWordText': antecedentNextWordText,
+                         'antecedentGrammaticalGender': antecedentGrammaticalGender,'anaphorGrammaticalGender':anaphorGrammaticalGender,
+                         'anaphorDefiniteness': anaphorDefiniteness,'antecedentDefiniteness': antecedentDefiniteness,
+                         'antecedentPronounType': antecedentPronounType,'anaphorPronounType' :anaphorPronounType,'anaphorCase': anaphorCase,'antecedentCase': antecedentCase,
+                         'antecedentAnimacy':antecedentAnimacy,'anaphorAnimacy': anaphorAnimacy, 'antecedentNaturalGender': antecedentNaturalGender,'anaphorNaturalGender': anaphorNaturalGender,'antecedentNerTag': antecedentNerTag,'anaphorNerTag': anaphorNerTag,'antecedentPerson': antecedentPerson,'anaphorPerson': anaphorPerson,'antecedentNumber': antecedentNumber,'anaphorNumber': anaphorNumber,'antecedentPronounText': antecedentPronounText, 'anaphorPronounText': anaphorPronounText}
 
 def getStringFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int, stringFeatures: List[str]):
     featureVector = []

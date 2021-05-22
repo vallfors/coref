@@ -279,7 +279,7 @@ def multiPass(doc: Document, config: Config):
                     'pronounResolution': pronounResolution, 
                     'pronounResolutionClusterBased': pronounResolutionClusterBased,
                     'pronounResolutionWithNerRules': pronounResolutionWithNerRules,
-                    'wordVectorDistance': wordVectorDistance}
+                    'wordVectorDistance': wordVectorDistance, 'relaxedStringMatch': relaxedStringMatch}
     sieves = []
     for s in config.multipassSieves:
         if not s in sieveMapping:

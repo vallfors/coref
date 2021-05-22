@@ -31,6 +31,7 @@ def main():
         if config.docId >= len(docs):
             raise Exception(f'Document id {config.docId} out of bounds, check config')
         docs = [docs[config.docId]]
+
     for id, doc in enumerate(docs):
         logGreen(f'Processing document {id}')
         load_tf_weights_in_bert_generation('Adding stanza annotation')
@@ -49,8 +50,10 @@ def main():
         logGreen('Evaluation')
         matchMentions(doc, config)
         if config.compareClusters:
-            compareClusters(doc)
+           compareClusters(doc)
         print()
+
+    #printStatistics(docs)
     if config.writeForScoring:
         writeConllForScoring(docs)
     

@@ -83,6 +83,24 @@ def extractPerson(headWord):
         return 'third'
     return 'UNKNOWN'
 
+def extractPronounType(headWord):
+    if headWord.feats == None:
+        return 'UNKNOWN'
+    feats = headWord.feats.split('|')
+    for feat in feats:
+        if feat.startswith('PronType'):
+            return feat.split('=')[1]
+    return 'UNKNOWN'
+
+def extractCase(headWord):
+    if headWord.feats == None:
+        return 'UNKNOWN'
+    feats = headWord.feats.split('|')
+    for feat in feats:
+        if feat.startswith('Case'):
+            return feat.split('=')[1]
+    return 'UNKNOWN'
+
 def addFeaturesToMentionDict(doc: Document, nerPipeline, mentions: Dict[int, Mention]):
     for mention in mentions.values():
         mention.features = Features()
@@ -104,7 +122,7 @@ def addFeaturesToMentionDict(doc: Document, nerPipeline, mentions: Dict[int, Men
         else:
             mention.features.nerTag = nerResult[0]['entity']
 
-        mention.features.upos = headWord.upos        
+        mention.features.upos = headWord.upos
         mention.features.headWordDeprel = headWord.deprel
         mention.features.headWordLemma = headWord.lemma
         mention.features.headWordHead = headWord.head
@@ -118,7 +136,8 @@ def addFeaturesToMentionDict(doc: Document, nerPipeline, mentions: Dict[int, Men
         mention.features.gender = extractGender(headWord)
         mention.features.definite = extractDefiniteness(headWord)
         mention.features.person = extractPerson(headWord)
-
+        mention.features.pronounType = extractPronounType(headWord)
+        mention.features.case = extractCase(headWord)
 def addFeatures(doc: Document, nerPipeline):
     addFeaturesToMentionDict(doc, nerPipeline, doc.goldMentions)
     addFeaturesToMentionDict(doc, nerPipeline, doc.predictedMentions)

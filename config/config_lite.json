@@ -13,7 +13,7 @@
         {
             "name": "common",
             "sentenceLimit": 15,
-            "threshold": 0.3,
+            "threshold": 0.15,
             "mentionPos": "NOUN",
             "antecedentPos": "NOUN",
             "subsample": true
@@ -21,7 +21,7 @@
         {
             "name": "properCommon",
             "sentenceLimit": 15,
-            "threshold": 0.3,
+            "threshold": 0.15,
             "mentionPos": "PROPN",
             "antecedentPos": "NOUN",
             "subsample": false
@@ -29,31 +29,33 @@
         {
             "name": "pronoun",
             "sentenceLimit": 15,
-            "threshold": 0.2,
+            "threshold": 0.15,
             "mentionPos": "PRON",
             "antecedentPos": "ANY",
-            "subsample": true
+            "subsample": false
         }
     ],
     "inputFile": "./data/textinator/dev.json",
     "trainingInputFile": "./data/textinator/train.json",
     "wordVectorFile": "../model.bin",
     "maxDepth": -1,
-    "useAllDocs": false,
+    "useAllDocs": true,
     "docId": 0,
     "compareClusters": false,
     "writeForScoring": true,
-    "debugMentionDetection": true,
+    "debugMentionDetection": false,
     "debugFeatureSelection": true,
     "minimalMutualInformation": 0.0001,
     "allowedFeatureRarity": 30,
-    "useSubsampling": true,
+    "useSubsampling": false,
     "orderAntecedentsBySubject": false,
     "features": ["sentenceDistance", "mentionDistance", "minimumClusterDistance",
         "antecedentClusterSize", "mentionClusterSize", "exactStringMatch", "identicalHeadWords", 
         "identicalHeadWordsAndProper", "numberMatch", "genderMatch", "naturalGenderMatch",
         "animacyMatch", "nerMatch", "clusterHeadWordMatch", "clusterProperHeadWordMatch",
-        "clusterGenitiveHeadWordMatch", "clusterLemmaHeadWordMatch", "wordvecHeadWordDistance"],
+        "clusterGenitiveHeadWordMatch", "clusterLemmaHeadWordMatch", "wordvecHeadWordDistance",
+        "anaphorFirstInSentence","antecedentFirstInSentence","dependentOnSame","antecedentLength","anaphorLength","personMatch","iWithinIClusterCheck"],
     "stringFeatures": ["mentionDeprel", "mentionNextWordPos",
-                       "antecedentDeprel","antecedentNextWordPos"]
+                       "antecedentDeprel","antecedentNextWordPos","antecedentGrammaticalGender","anaphorGrammaticalGender","anaphorDefiniteness","antecedentDefiniteness",
+                       "anaphorPronounType","antecedentPronounType","anaphorCase","antecedentCase","antecedentPronounText", "anaphorPronounText"]
 }

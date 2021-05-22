@@ -16,6 +16,8 @@ class Features:
     isObject: bool # Direct or indirect object
     headWordHead: int # Id of the head of the headword
     person: str # first, second, third or UNKNOWN
+    pronounType: str
+    case: str
 
 class ClusterFeatures:
     nonStopWords: List[str]

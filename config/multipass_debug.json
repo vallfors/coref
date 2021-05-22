@@ -1,14 +1,15 @@
 {
     "useGoldMentions": false,
     "algorithm": "multipass",
-    "multipassSieves": ["exactMatch", "genetiveResolution", "pronounResolution"],
+    "multipassSieves": ["exactMatch", "genetiveResolution", "pronounResolutionClusterBased"],
     "orderAntecedentsBySubject": true,
     "inputFile": "./data/textinator/devfromtrain.json",
     "useAllDocs": false,
     "docId": 0,
-    "compareClusters": true,
+    "compareClusters": false,
     "writeForScoring": true,
-    "debugMentionDetection": true,
-    "wordVectorFile": "../model.bin"
+    "debugMentionDetection": false,
+    "wordVectorFile": "../model.bin",
+    "allowIndefiniteAnaphor": true
 
 }

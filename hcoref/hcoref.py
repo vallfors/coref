@@ -9,6 +9,8 @@ import numpy as np
 from gensim.models import KeyedVectors
 import random
 import time
+import os, psutil
+
 
 from preprocessing.document import Mention, Document
 from preprocessing.config import Config
@@ -17,21 +19,38 @@ from algorithm.scaffolding import doSievePasses, Sieve, useSieve
 from algorithm.candidate_antecedents import getCandidateAntecedents
 
 def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, sieve):
+    name = sieve['name']
+    print(f'Started training sieve {name}')
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss) 
     if config.maxDepth == -1: # No max depth
         model = RandomForestClassifier(random_state=0)
     else:
         model = RandomForestClassifier(max_depth=config.maxDepth, random_state=0)
     X = []
     stringFeatureVectors = []
+    print('Before string feature vectors')
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss) 
     for mp in mentionPairs:
         X.append(getFeatureVector(*mp, config.features))
         stringFeatureVectors.append(getStringFeatureVector(*mp, config.stringFeatures))
     
+    print('Before onehot encoder')
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss) 
     encoder = OneHotEncoder(handle_unknown='ignore')
     encoder.fit(stringFeatureVectors)
     stringFeatures = encoder.transform(stringFeatureVectors).toarray()
+    print('Len after feature encoding:')
+    print(len(stringFeatures))
+    print(len(stringFeatures[0]))
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss)
     X = np.concatenate((X, stringFeatures), 1)
-    
+    print('After onehot encoder')
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss) 
     allFeatureNames = np.concatenate((config.features, encoder.get_feature_names(config.stringFeatures)), 0)
     
     selectedFeatures = []
@@ -76,7 +95,14 @@ def trainSieveAndUse(docs: List[Document], config: Config, mentionPairs, Y, siev
             tempX.append(X[i])
     X = np.transpose(np.array(tempX))
 
+    print('After feature selection')
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss) 
+
     model.fit(X, Y)
+    print('After fitting')
+    process = psutil.Process(os.getpid())
+    print(process.memory_info().rss) 
 
     joblib.dump(model, f'models/{sieve["name"]}Model.joblib')
     joblib.dump(encoder, f'models/{sieve["name"]}OneHotEncoder.joblib')
@@ -94,6 +120,9 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
         positiveMentionPairs[sieve['name']] = []
         negativeMentionPairs[sieve['name']] = []
         maxSentenceDistance = max(maxSentenceDistance, sieve['sentenceLimit'])
+    process = psutil.Process(os.getpid())
+    print('Before sample collection:')
+    print(process.memory_info().rss) 
     for doc in docs:
         # Create a cluster for each mention, containing only that mention
         doc.predictedClusters = {}
@@ -126,7 +155,10 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
             mentionPairs = negativeMentionPairs[sieve['name']] + positiveMentionPairs[sieve['name']]
             Y = [0] * len(negativeMentionPairs[sieve['name']]) + [1] * len(positiveMentionPairs[sieve['name']])
             trainSieveAndUse(docs, config, mentionPairs, Y, sieve)
-            
+
+    process = psutil.Process(os.getpid())
+    print('Collected all samples:')
+    print(process.memory_info().rss)        
     if config.useSubsampling:
         # First train with a random subset of negative examples
         subsampledY = {}
@@ -143,6 +175,9 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
         for sieve in sieves:
             trainSieveAndUse(docs, config, subsampledPairs[sieve['name']], subsampledY[sieve['name']], sieve)
 
+        process = psutil.Process(os.getpid())
+        print('First pass done:')
+        print(process.memory_info().rss) 
         # Reset all the clusters, and retrain with the most difficult negative examples.
         for doc in docs:
             # Create a cluster for each mention, containing only that mention
@@ -183,8 +218,14 @@ def trainSieves(config: Config, docs: List[Document], wordVectors):
                 difficultNegatives = negativeMentionPairs[sieve['name']]
             difficultPairs[sieve['name']] = difficultNegatives + positiveMentionPairs[sieve['name']]
             difficultY[sieve['name']] = [0] * len(difficultNegatives) + [1] * len(positiveMentionPairs[sieve['name']])
+        process = psutil.Process(os.getpid())
+        print('Collected all difficult samples:')
+        print(process.memory_info().rss) 
         for sieve in sieves:
             trainSieveAndUse(docs, config, difficultPairs[sieve['name']], difficultY[sieve['name']], sieve)
+        process = psutil.Process(os.getpid())
+        print('Finished second training:')
+        print(process.memory_info().rss) 
 
 def trainAll(docs: List[Document], config: Config):
     wordVectors = KeyedVectors.load_word2vec_format(config.wordVectorFile, binary=True)
