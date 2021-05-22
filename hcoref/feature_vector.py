@@ -313,7 +313,27 @@ def anaphorLength(doc: Document, wordVectors, mention: Mention, antecedent: Ment
 def antecedentLength(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
     return len(antecedent.stanzaIds)
 
+def antecedentClusterIncludesAnaphorCluster(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int):
+    mentionCluster = doc.predictedClusters[mention.predictedCluster]
+    antecedentCluster = doc.predictedClusters[antecedent.predictedCluster]
+    antecedentClusterWords = set()
+    for id in antecedentCluster:
+        m = doc.predictedMentions[id].text.split(' ')
+        for word in m:
+            if len(word) > 3:
+                antecedentClusterWords.add(word)
 
+    for mentionId in mentionCluster:
+        m = doc.predictedMentions[mentionId].text.split(' ')
+        for word in m:
+            if len(word) > 3:
+                if word not in antecedentClusterWords:
+                    return False
+    return True
+
+
+
+    
 
 featureFunction = {'sentenceDistance': sentenceDistance, 'identicalHeadWords': identicalHeadWords,
                     'identicalHeadWordsAndProper': identicalHeadWordsAndProper, 'exactStringMatch': exactStringMatch,
@@ -326,7 +346,7 @@ featureFunction = {'sentenceDistance': sentenceDistance, 'identicalHeadWords': i
                     'clusterLemmaHeadWordMatch': clusterLemmaHeadWordMatch, 'clusterGenitiveHeadWordMatch': clusterGenitiveHeadWordMatch,
                     'antecedentFirstInSentence': antecedentFirstInSentence,'anaphorFirstInSentence':anaphorFirstInSentence, 'dependentOnSame': dependentOnSame,
                     'antecedentLength': antecedentLength,'anaphorLength': anaphorLength,'numberMatchClusterBased':numberMatchClusterBased,'personMatch': personMatch,
-                    'nerMatchClusterBased':nerMatchClusterBased,'personMatchClusterBased': personMatchClusterBased,'genderMatchClusterBased': genderMatchClusterBased,'animacyMatchClusterBased': animacyMatchClusterBased,'iWithinIClusterCheck': iWithinIClusterCheck}
+                    'nerMatchClusterBased':nerMatchClusterBased,'personMatchClusterBased': personMatchClusterBased,'genderMatchClusterBased': genderMatchClusterBased,'animacyMatchClusterBased': animacyMatchClusterBased,'iWithinIClusterCheck': iWithinIClusterCheck,'antecedentClusterIncludesAnaphorCluster': antecedentClusterIncludesAnaphorCluster}
 
 def getFeatureVector(doc: Document, wordVectors, mention: Mention, antecedent: Mention, mentionDistance: int, features):
     featureVector = []

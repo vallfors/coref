@@ -13,7 +13,7 @@
         {
             "name": "common",
             "sentenceLimit": 15,
-            "threshold": 0.15,
+            "threshold": 0.3,
             "mentionPos": "NOUN",
             "antecedentPos": "NOUN",
             "subsample": true
@@ -21,7 +21,7 @@
         {
             "name": "properCommon",
             "sentenceLimit": 15,
-            "threshold": 0.15,
+            "threshold": 0.3,
             "mentionPos": "PROPN",
             "antecedentPos": "NOUN",
             "subsample": false
@@ -29,7 +29,7 @@
         {
             "name": "pronoun",
             "sentenceLimit": 15,
-            "threshold": 0.15,
+            "threshold": 0.2,
             "mentionPos": "PRON",
             "antecedentPos": "ANY",
             "subsample": false
@@ -54,7 +54,7 @@
         "identicalHeadWordsAndProper", "numberMatch", "genderMatch", "naturalGenderMatch",
         "animacyMatch", "nerMatch", "clusterHeadWordMatch", "clusterProperHeadWordMatch",
         "clusterGenitiveHeadWordMatch", "clusterLemmaHeadWordMatch", "wordvecHeadWordDistance",
-        "anaphorFirstInSentence","antecedentFirstInSentence","dependentOnSame","antecedentLength","anaphorLength","personMatch","iWithinIClusterCheck"],
+        "anaphorFirstInSentence","antecedentFirstInSentence","dependentOnSame","antecedentLength","anaphorLength","personMatch","iWithinIClusterCheck","antecedentClusterIncludesAnaphorCluster"],
     "stringFeatures": ["mentionDeprel", "mentionNextWordPos",
                        "antecedentDeprel","antecedentNextWordPos","antecedentGrammaticalGender","anaphorGrammaticalGender","anaphorDefiniteness","antecedentDefiniteness",
                        "anaphorPronounType","antecedentPronounType","anaphorCase","antecedentCase","antecedentPronounText", "anaphorPronounText"]
