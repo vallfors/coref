@@ -4,7 +4,7 @@
     "scaffoldingSieves": [
         {
             "name": "proper",
-            "sentenceLimit": 15,
+            "sentenceLimit": 1000,
             "threshold": 0.15,
             "mentionPos": "PROPN",
             "antecedentPos": "PROPN",
@@ -28,7 +28,7 @@
         },
         {
             "name": "pronoun",
-            "sentenceLimit": 15,
+            "sentenceLimit": 5,
             "threshold": 0.15,
             "mentionPos": "PRON",
             "antecedentPos": "ANY",
@@ -48,7 +48,7 @@
     "minimalMutualInformation": 0.0001,
     "allowedFeatureRarity": 30,
     "useSubsampling": true,
-    "orderAntecedentsBySubject": false,
+    "orderAntecedentsBySubject": true,
     "features": ["sentenceDistance", "mentionDistance", "minimumClusterDistance",
         "antecedentClusterSize", "mentionClusterSize", "exactStringMatch", "identicalHeadWords", 
         "identicalHeadWordsAndProper", "numberMatch", "genderMatch", "naturalGenderMatch",
