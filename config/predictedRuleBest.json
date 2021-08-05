@@ -1,0 +1,14 @@
+{
+    "useGoldMentions": false,
+    "algorithm": "multipass",
+    "multipassSieves": ["exactMatch", "genetiveResolution", "pronounResolutionClusterBased"],
+    "orderAntecedentsBySubject": true,
+    "inputFile": "./data/textinator/dev.json",
+    "wordVectorFile": "../model.bin",
+    "useAllDocs": true,
+    "docId": 0,
+    "compareClusters": false,
+    "writeForScoring": true,
+    "debugMentionDetection": false,
+    "allowIndefiniteAnaphor": true
+}

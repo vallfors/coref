@@ -1,0 +1,57 @@
+version: 8.01 /home/lisa/Documents/KTH/exjobb/reference-coreference-scorers/lib/CorScorer.pm
+
+METRIC muc:
+Repeated mention in the key: 786, 786 7072
+Repeated mention in the response: 786, 786 7272
+
+====== TOTALS =======
+Identification of Mentions: Recall: (412 / 493) 83.56%	Precision: (412 / 412) 100%	F1: 91.04%
+--------------------------------------------------------------------------
+Coreference: Recall: (252 / 359) 70.19%	Precision: (252 / 311) 81.02%	F1: 75.22%
+--------------------------------------------------------------------------
+
+METRIC bcub:
+Repeated mention in the key: 786, 786 7072
+Repeated mention in the response: 786, 786 7272
+
+====== TOTALS =======
+Identification of Mentions: Recall: (412 / 493) 83.56%	Precision: (412 / 412) 100%	F1: 91.04%
+--------------------------------------------------------------------------
+Coreference: Recall: (314.819047619048 / 494) 63.72%	Precision: (300.103422422988 / 412) 72.84%	F1: 67.98%
+--------------------------------------------------------------------------
+
+METRIC ceafm:
+Repeated mention in the key: 786, 786 7072
+Repeated mention in the response: 786, 786 7272
+
+====== TOTALS =======
+Identification of Mentions: Recall: (412 / 493) 83.56%	Precision: (412 / 412) 100%	F1: 91.04%
+--------------------------------------------------------------------------
+Coreference: Recall: (309 / 494) 62.55%	Precision: (309 / 412) 75%	F1: 68.21%
+--------------------------------------------------------------------------
+
+METRIC ceafe:
+Repeated mention in the key: 786, 786 7072
+Repeated mention in the response: 786, 786 7272
+
+====== TOTALS =======
+Identification of Mentions: Recall: (412 / 493) 83.56%	Precision: (412 / 412) 100%	F1: 91.04%
+--------------------------------------------------------------------------
+Coreference: Recall: (76.5221676815824 / 135) 56.68%	Precision: (76.5221676815824 / 101) 75.76%	F1: 64.84%
+--------------------------------------------------------------------------
+
+METRIC blanc:
+Repeated mention in the key: 786, 786 7072
+Repeated mention in the response: 786, 786 7272
+
+====== TOTALS =======
+Identification of Mentions: Recall: (412 / 493) 83.56%	Precision: (412 / 412) 100%	F1: 91.04%
+--------------------------------------------------------------------------
+
+Coreference:
+Coreference links: Recall: (785 / 1302) 60.29%	Precision: (785 / 1309) 59.96%	F1: 60.13%
+--------------------------------------------------------------------------
+Non-coreference links: Recall: (11335 / 16764) 67.61%	Precision: (11335 / 11627) 97.48%	F1: 79.84%
+--------------------------------------------------------------------------
+BLANC: Recall: (0.639534931667266 / 1) 63.95%	Precision: (0.787290232167521 / 1) 78.72%	F1: 69.98%
+--------------------------------------------------------------------------
