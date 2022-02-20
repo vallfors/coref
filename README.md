@@ -38,8 +38,8 @@ To train new models for the ML algorithm, run `python3 train.py <path/to/configf
 | orderAntecedentsBySubject| boolean | Regulates the order mentions are considered for coreference. If true, subjects will be prioritized. |
 | features | list of strings | The features (except features with string values) to be used in the ML algorithm. See the example configs or the code for available features. |
 | stringFeatures | list of strings | The features with string values to be used in the ML algorithm. See the example configs or the code for available features. |
-| wordVectorFile | path as string, e.g. "../model.bin" | |
-| allowIndefiniteAnaphor | boolean | |
+| wordVectorFile | path as string, e.g. "../model.bin" | If word vector features are enabled, this must be provided. |
+| allowIndefiniteAnaphor | boolean | If true, allows indefinite mentions to be marked as coreferent with previous mentions. |
 | maxDepth | int | The maximum depth of the decision trees in the ML algorithm. If set to -1, no maximum depth is used. |
 
 
