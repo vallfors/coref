@@ -22,13 +22,13 @@ To train new models for the ML algorithm, run `python3 train.py <path/to/configf
 | ------------- |:-------------| -----|
 | algorithm      | "hcoref", "multipass" | The algorithm used. "hcoref" is the ML based algorithm, and "multipass" the rule-based algorithm. |
 | useGoldMentions      | boolean      |   If true, the mentions in the input will be used when predicting clusters, rather than using a mention prediction algorithm |
-| inputFile | a file path, for instance  "data/input.json"     |    The input file used for evaluation |
-| trainingInputFile | a file path, for instance  "data/training.json"     |    The input file used for training |
-| useAllDocs | boolean     |    Whether all documents in the file should be evaluated, or only one |
-| docId | int    |    The index (starting at 0) of the file to be evaluated. Used if useAllDocs = false |
-| compareClusters | boolean    |    If true, you will get a walk through comparison between gold and predicted clusters, after each evaluated document |
-| debugMentionDetection | boolean     |    If true, all missed and extra mentions will be printed, as well as mention detection statistics |
-| writeForScoring | boolean  |    If true, the results of the prediction will be printed in a format that can be used by the official ConLL-2011 scorer |
+| inputFile | a file path, for instance  "data/input.json"     |    The input file used for evaluation. |
+| trainingInputFile | a file path, for instance  "data/training.json"     |    The input file used for training. |
+| useAllDocs | boolean     |    Whether all documents in the file should be evaluated, or only one. |
+| docId | int    |    The index (starting at 0) of the file to be evaluated. Used if useAllDocs = false. |
+| compareClusters | boolean    |    If true, you will get a walk through comparison between gold and predicted clusters, after each evaluated document. |
+| debugMentionDetection | boolean     |    If true, all missed and extra mentions will be printed, as well as mention detection statistics. |
+| writeForScoring | boolean  |    If true, the results of the prediction will be printed in a format that can be used by the official ConLL-2011 scorer. |
 | scaffoldingSieves | a list of objects, each with name, sentenceLimit and threshold    |    Descriptions of the scaffolding sieves. |
 | multipassSieves |    a list of strings    |    The names of the sieves to be used in the multipass algorithm. They will be applied in the order they are given. See below for a list of all available sieves. |
 | debugFeatureSelection | boolean | If true, debugging info will be shown while doing feature selection. |
