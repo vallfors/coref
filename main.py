@@ -31,7 +31,9 @@ def main():
         if config.docId >= len(docs):
             raise Exception(f'Document id {config.docId} out of bounds, check config')
         docs = [docs[config.docId]]
-
+    correct = 0
+    falseNegatives = 0
+    falsePositives = 0
     for id, doc in enumerate(docs):
         logGreen(f'Processing document {id}')
         load_tf_weights_in_bert_generation('Adding stanza annotation')
@@ -48,10 +50,22 @@ def main():
         predictCoreference(doc, config)
         
         logGreen('Evaluation')
-        matchMentions(doc, config)
+        c, fp, fn = matchMentions(doc, config)
+        correct += c
+        falsePositives += fp
+        falseNegatives += fn
         if config.compareClusters:
            compareClusters(doc)
         print()
+
+    precision = float(correct)/(float(correct)+float(falsePositives))
+    recall = float(correct)/(float(correct)+float(falseNegatives))
+    print("Total stats")
+    print(f'Correct mentions: {correct}')
+    print(f'Missed mentions: {falseNegatives}')
+    print(f'Extra mentions: {falsePositives}')
+    print(f'Precision: {precision}')
+    print(f'Recall: {recall}')
 
     #printStatistics(docs)
     if config.writeForScoring:

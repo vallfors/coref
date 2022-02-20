@@ -20,23 +20,23 @@ def matchMentions(doc: Document, config: Config):
 
     for predicted, gold in doc.predictedToGold.items():
         correct += 1
-    if False:
+    if config.debugMentionDetection:
         print('-----------Printing missed mentions----------')
     for goldMention in doc.goldMentions.values():
         if goldMention.id not in doc.goldToPredicted:
             falseNegatives +=1
-            if False:
+            if config.debugMentionDetection:
                 print(goldMention.text)
                 for word in doc.stanzaAnnotation.sentences[goldMention.stanzaSentence].words:
                     print(word.text, end = ' ')
                 print('\n----------')
 
-    if False:
+    if config.debugMentionDetection:
         print('-----------Printing extra mentions----------')
     for predictedMention in doc.predictedMentions.values():
         if predictedMention.id not in doc.predictedToGold:
             falsePositives += 1
-            if False:
+            if config.debugMentionDetection:
                 print(predictedMention.text)
                 for word in doc.stanzaAnnotation.sentences[predictedMention.stanzaSentence].words:
                     print(word.text, end = ' ')
@@ -50,3 +50,4 @@ def matchMentions(doc: Document, config: Config):
         print(f'Extra mentions: {falsePositives}')
         print(f'Precision: {precision}')
         print(f'Recall: {recall}')
+    return (correct, falsePositives, falseNegatives)
