@@ -43,6 +43,6 @@ To train new models for the ML algorithm, run `python3 train.py <path/to/configf
 | maxDepth | int | The maximum depth of the decision trees in the ML algorithm. If set to -1, no maximum depth is used. |
 
 
-## Navigating the repository
+## Navigating the Repository
 
 The core of the algorithm implementations are in the algorithm directory. `multipass.py` contains the core of the rule-based algorithm, while `scaffolding.py` (name taken from the original paper) contains the prediction procedure for the ML algorithm. Training and features for the ML algorithm can be found in the `hcoref` directory. Due to the exploratory nature of this project, there is a lot of code that was not used in the final solution, but that can be reenabled by changing config files, or that may be in incomplete condition (such as support for alternative file formats).
