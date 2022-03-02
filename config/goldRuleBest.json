@@ -1,0 +1,14 @@
+{
+    "useGoldMentions": true,
+    "algorithm": "multipass",
+    "multipassSieves": ["exactMatch", "genetiveResolution", "relaxedStringMatch","lemmaHeadWordMatch", "pronounResolutionClusterBased"],
+    "orderAntecedentsBySubject": true,
+    "inputFile": "./data/example.json",
+    "wordVectorFile": "../model.bin",
+    "useAllDocs": true,
+    "docId": 0,
+    "compareClusters": true,
+    "writeForScoring": true,
+    "debugMentionDetection": false,
+    "allowIndefiniteAnaphor": true
+}
